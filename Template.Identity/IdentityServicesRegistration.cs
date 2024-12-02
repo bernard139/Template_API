@@ -31,6 +31,7 @@ namespace Template.Identity
 
             services.AddTransient<IAuthService, AuthService>();
             services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IForgotPasswordService, ForgotPasswordService>();
 
             services.AddAuthentication(options =>
             {

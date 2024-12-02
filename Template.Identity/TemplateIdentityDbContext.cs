@@ -26,5 +26,7 @@ namespace Template.Identity
             modelBuilder.ApplyConfiguration(new UserConfiguration());
             modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
         }
+
+        public DbSet<OTPs> OTPs { get; set; }
     }
 }

@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Template.Application.Contracts.Persistence;
 using Template.Domain;
 using Template.Domain.Common;
 
 namespace Template.Persistence
 {
-    public class TemplateDbContext : DbContext
+    public class TemplateDbContext : DbContext, ITemplateDbContext
     {
         public TemplateDbContext(DbContextOptions<TemplateDbContext> options) : base(options)
         { 
@@ -28,6 +29,6 @@ namespace Template.Persistence
             return base.SaveChangesAsync(cancellationToken);
         }
 
-        //public DbSet<Task> Tasks { get; set;}
+        public DbSet<MessagingSystem> MessagingSystems { get; set;}
     }
 }
