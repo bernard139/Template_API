@@ -8,7 +8,7 @@ namespace Template.Application.Contracts.Persistence
 {
     public interface IUnitOfWork : IDisposable
     {
-        //ITaskRepository TaskRepository { get; }
+        ITaskRepository TaskRepository { get; }
         Task Save();
     }
 }

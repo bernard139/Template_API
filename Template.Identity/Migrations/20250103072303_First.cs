@@ -14,6 +14,11 @@ namespace Template.Identity.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Discriminator = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RoleDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
@@ -30,6 +35,9 @@ namespace Template.Identity.Migrations
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -48,6 +56,30 @@ namespace Template.Identity.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OTPs",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OTP = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OTPType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Token = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OTPs", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -158,20 +190,20 @@ namespace Template.Identity.Migrations
 
             migrationBuilder.InsertData(
                 table: "AspNetRoles",
-                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                columns: new[] { "Id", "ConcurrencyStamp", "DateCreated", "Discriminator", "IsActive", "IsDeleted", "Name", "NormalizedName", "RoleDescription" },
                 values: new object[,]
                 {
-                    { "a4f78d09-86e3-4e96-a91b-3713e8043c7c", null, "Administrator", "ADMINISTRATOR" },
-                    { "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd", null, "User", "USER" }
+                    { "a4f78d09-86e3-4e96-a91b-3713e8043c7c", null, new DateTime(2025, 1, 3, 8, 23, 2, 883, DateTimeKind.Local).AddTicks(8255), "ApplicationRole", true, false, null, "ADMINISTRATOR", "Administrative role" },
+                    { "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd", null, new DateTime(2025, 1, 3, 8, 23, 2, 883, DateTimeKind.Local).AddTicks(8275), "ApplicationRole", true, false, null, "USER", "User role" }
                 });
 
             migrationBuilder.InsertData(
                 table: "AspNetUsers",
-                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
+                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "DateCreated", "Email", "EmailConfirmed", "FirstName", "IsActive", "IsDeleted", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
-                    { "7f8df141-8a3e-4f3f-82d3-0a89626a4b1c", 0, "32416955-d7c3-459f-8f4c-b8a9bb760263", "admin@localhost.com", true, "System", "Admin", false, null, "ADMIN@LOCALHOST.COM", "ADMIN@LOCALHOST.COM", "AQAAAAIAAYagAAAAEO0I4GtTQTrWFHU+JVXGNTl9Prm1d0943RIr+6eyjocKSQUCmQion9Fzx+RJTHRVfw==", null, false, "25785c42-14f2-4ec5-a3f1-22a919764fb4", false, "admin@localhost.com" },
-                    { "b25a925a-9fbd-4e49-89f1-8ec446a8f023", 0, "3b7b9932-03f2-47a4-9a58-f256106541a7", "user@localhost.com", true, "System", "USER", false, null, "USER@LOCALHOST.COM", "USER@LOCALHOST.COM", "AQAAAAIAAYagAAAAEOa0lT8YSJgJGrMcZiSIchK6vl+b0c6AMzKKbT1jy/Jczfa41BIekVGsNe3zOBq34Q==", null, false, "4c3ad355-344d-44f3-95ee-d57236315e26", false, "user@localhost.com" }
+                    { "7f8df141-8a3e-4f3f-82d3-0a89626a4b1c", 0, "1c89eb17-0d11-41a9-b917-65e0dc2e4ecb", new DateTime(2025, 1, 3, 8, 23, 3, 72, DateTimeKind.Local).AddTicks(6422), "admin@localhost.com", true, "System", true, false, "Admin", false, null, "ADMIN@LOCALHOST.COM", "ADMIN@LOCALHOST.COM", "AQAAAAIAAYagAAAAEKrEF3NRzo//vPYfkQEnIIG89Zhf5/1jka1Qin2/pdkE6Z7CiIpb2BSdyHNcNQNFQw==", null, false, "8cc3cea7-c986-403b-a5ca-999ed75aa232", false, "admin@localhost.com" },
+                    { "b25a925a-9fbd-4e49-89f1-8ec446a8f023", 0, "74111ee3-397d-4f58-b622-2d89616a8b10", new DateTime(2025, 1, 3, 8, 23, 3, 262, DateTimeKind.Local).AddTicks(8568), "user@localhost.com", true, "System", true, false, "USER", false, null, "USER@LOCALHOST.COM", "USER@LOCALHOST.COM", "AQAAAAIAAYagAAAAEKW2jwfTk6u7cNYV0djnRqVIEBlbjMouChT1Bn6jslkIiBowmWa5kXCzzDH4cOEVvw==", null, false, "ecc96c56-fe9a-4454-887a-d42f498f13cb", false, "user@localhost.com" }
                 });
 
             migrationBuilder.InsertData(
@@ -240,6 +272,9 @@ namespace Template.Identity.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "OTPs");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

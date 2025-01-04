@@ -6,26 +6,35 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Template.Identity.Models;
 
 namespace Template.Identity.Configurations
 {
-    public class RoleConfiguration : IEntityTypeConfiguration<IdentityRole>
+    public class RoleConfiguration : IEntityTypeConfiguration<ApplicationRole>
     {
-        public void Configure(EntityTypeBuilder<IdentityRole> builder) 
+        public void Configure(EntityTypeBuilder<ApplicationRole> builder) 
         {
             builder.HasData(
-                new IdentityRole()
+                new ApplicationRole()
                 {
                     Id = "a4f78d09-86e3-4e96-a91b-3713e8043c7c",
                     Name = "Administrator",
-                    NormalizedName = "ADMINISTRATOR"
+                    NormalizedName = "ADMINISTRATOR",
+                    RoleDescription = "Administrative role",
+                    DateCreated = DateTime.Now,
+                    IsActive = true,
+                    IsDeleted = false
 
                 },
-                new IdentityRole()
+                new ApplicationRole()
                 {
                     Id = "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd",
                     Name = "User",
-                    NormalizedName = "USER"
+                    NormalizedName = "USER",
+                    RoleDescription = "User role",
+                    DateCreated = DateTime.Now,
+                    IsActive = true,
+                    IsDeleted = false
                 }
             );
         }

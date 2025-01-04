@@ -12,8 +12,10 @@ namespace Template.Persistence
         {
             services.AddDbContext<TemplateDbContext>(options =>
                 options.UseSqlServer(
-                    configuration.GetConnectionString("TemplateConnectionString"))); 
+                    configuration.GetConnectionString("TemplateConnectionString")));
 
+
+            services.AddTransient<ITaskRepository, TaskRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 

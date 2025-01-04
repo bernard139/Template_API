@@ -16,6 +16,25 @@ namespace Template.Infrastructure.Mail
         {
         }
 
+        public async Task<EmailBody> AccountActivation(AccountActivationDTO request)
+        {
+
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "EmailTemplates", "AccountActivation.html");
+            var messageBody = await System.IO.File.ReadAllTextAsync(templatePath);
+
+            messageBody = messageBody.Replace("{UserName}", request.UserName);
+            messageBody = messageBody.Replace("{ActivationLink}", request.ActivationLink);
+
+            var emailBody = new EmailBody
+            {
+                MessageBody = messageBody,
+                Receiver = request.Email,
+                Subject = "Account Activation",
+                HasAttachment = false,
+            };
+            return emailBody;
+        }
+
         public async Task<EmailBody> PasswordOTPEmailRequest(UserDTO user, string otp)
         {
 

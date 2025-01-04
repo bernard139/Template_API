@@ -27,11 +27,14 @@ namespace Template.Identity
                 b => b.MigrationsAssembly(typeof(TemplateIdentityDbContext).Assembly.FullName)));
 
             services.AddIdentity<ApplicationUser, IdentityRole>()
-                .AddEntityFrameworkStores<TemplateIdentityDbContext>().AddDefaultTokenProviders();
+             .AddEntityFrameworkStores<TemplateIdentityDbContext>()
+             .AddDefaultTokenProviders();
+
 
             services.AddTransient<IAuthService, AuthService>();
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IForgotPasswordService, ForgotPasswordService>();
+            services.AddTransient<IAccountActivationService, AccountActivationService>();
 
             services.AddAuthentication(options =>
             {

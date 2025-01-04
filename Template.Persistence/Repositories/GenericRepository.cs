@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using Template.Application.Contracts.Persistence;
+using static Microsoft.AspNetCore.Hosting.Internal.HostingApplication;
 
 namespace Template.Persistence.Repositories
 {
@@ -48,14 +49,38 @@ namespace Template.Persistence.Repositories
         }
 
 
-        public async Task<T> GetAsync(int id)
+        public async Task<T> GetAsync(long id)
         {
             return await _dbContext.Set<T>().FindAsync(id);
         }
 
         public async Task UpdateAsync(T entity)
         {
-            _dbContext.Entry(entity).State = EntityState.Modified;
+            var entityType = _dbContext.Model.FindEntityType(typeof(T));
+            var primaryKey = entityType?.FindPrimaryKey();
+            if (primaryKey == null)
+                throw new InvalidOperationException("The entity does not have a primary key defined.");
+
+            var keyValues = primaryKey.Properties
+                                       .Select(p => p.PropertyInfo.GetValue(entity))
+                                       .ToArray();
+
+            if (keyValues.Any(kv => kv == null))
+                throw new ArgumentException("Primary key value(s) cannot be null.");
+
+            var existingEntity = await _dbContext.Set<T>().FindAsync(keyValues);
+            if (existingEntity != null)
+            {
+                _dbContext.Entry(existingEntity).CurrentValues.SetValues(entity);
+            }
+            else
+            {
+                _dbContext.Set<T>().Attach(entity);
+                _dbContext.Entry(entity).State = EntityState.Modified;
+            }
+
+            await _dbContext.SaveChangesAsync();
         }
+
     }
 }

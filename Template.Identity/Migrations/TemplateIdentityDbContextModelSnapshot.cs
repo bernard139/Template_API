@@ -31,6 +31,10 @@ namespace Template.Identity.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Name")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -48,19 +52,7 @@ namespace Template.Identity.Migrations
 
                     b.ToTable("AspNetRoles", (string)null);
 
-                    b.HasData(
-                        new
-                        {
-                            Id = "a4f78d09-86e3-4e96-a91b-3713e8043c7c",
-                            Name = "Administrator",
-                            NormalizedName = "ADMINISTRATOR"
-                        },
-                        new
-                        {
-                            Id = "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd",
-                            Name = "User",
-                            NormalizedName = "USER"
-                        });
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityRole");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -193,6 +185,9 @@ namespace Template.Identity.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -203,6 +198,12 @@ namespace Template.Identity.Migrations
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -258,17 +259,20 @@ namespace Template.Identity.Migrations
                         {
                             Id = "7f8df141-8a3e-4f3f-82d3-0a89626a4b1c",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "34bb5181-26c4-4e5e-a919-429083a11a10",
+                            ConcurrencyStamp = "1c89eb17-0d11-41a9-b917-65e0dc2e4ecb",
+                            DateCreated = new DateTime(2025, 1, 3, 8, 23, 3, 72, DateTimeKind.Local).AddTicks(6422),
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "System",
+                            IsActive = true,
+                            IsDeleted = false,
                             LastName = "Admin",
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOn7Lo5qHdxQ4wJexnivUVCnHgk7J0Me0vZhmLkmEf6xbgcqE4ls/Tt7Ch5n5cIFvQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKrEF3NRzo//vPYfkQEnIIG89Zhf5/1jka1Qin2/pdkE6Z7CiIpb2BSdyHNcNQNFQw==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "507d3eb0-fd77-4f51-881e-07dd895f9f0a",
+                            SecurityStamp = "8cc3cea7-c986-403b-a5ca-999ed75aa232",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         },
@@ -276,17 +280,20 @@ namespace Template.Identity.Migrations
                         {
                             Id = "b25a925a-9fbd-4e49-89f1-8ec446a8f023",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "3c06f2d1-1a7d-4ba6-a806-f0d8398a2896",
+                            ConcurrencyStamp = "74111ee3-397d-4f58-b622-2d89616a8b10",
+                            DateCreated = new DateTime(2025, 1, 3, 8, 23, 3, 262, DateTimeKind.Local).AddTicks(8568),
                             Email = "user@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "System",
+                            IsActive = true,
+                            IsDeleted = false,
                             LastName = "USER",
                             LockoutEnabled = false,
                             NormalizedEmail = "USER@LOCALHOST.COM",
                             NormalizedUserName = "USER@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEC3nQM0BbHGI3ATYI/C6P1ilwRKNBy3bJ+w2gDcJ04VEB4io3ufMp6DFfFX2yCYXDg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKW2jwfTk6u7cNYV0djnRqVIEBlbjMouChT1Bn6jslkIiBowmWa5kXCzzDH4cOEVvw==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "b9b24d92-7982-459c-a660-f0bf233efda2",
+                            SecurityStamp = "ecc96c56-fe9a-4454-887a-d42f498f13cb",
                             TwoFactorEnabled = false,
                             UserName = "user@localhost.com"
                         });
@@ -339,6 +346,46 @@ namespace Template.Identity.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("OTPs");
+                });
+
+            modelBuilder.Entity("Template.Identity.Models.ApplicationRole", b =>
+                {
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityRole");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RoleDescription")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasDiscriminator().HasValue("ApplicationRole");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "a4f78d09-86e3-4e96-a91b-3713e8043c7c",
+                            NormalizedName = "ADMINISTRATOR",
+                            DateCreated = new DateTime(2025, 1, 3, 8, 23, 2, 883, DateTimeKind.Local).AddTicks(8255),
+                            IsActive = true,
+                            IsDeleted = false,
+                            RoleDescription = "Administrative role"
+                        },
+                        new
+                        {
+                            Id = "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd",
+                            NormalizedName = "USER",
+                            DateCreated = new DateTime(2025, 1, 3, 8, 23, 2, 883, DateTimeKind.Local).AddTicks(8275),
+                            IsActive = true,
+                            IsDeleted = false,
+                            RoleDescription = "User role"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

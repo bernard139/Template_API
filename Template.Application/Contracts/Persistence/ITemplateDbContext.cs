@@ -10,7 +10,7 @@ namespace Template.Application.Contracts.Persistence
 {
     public interface ITemplateDbContext
     {
-        public DbSet<MessagingSystem> MessagingSystems { get; set; }
+        public DbSet<Domain.Task> Tasks { get; set; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -12,4 +12,10 @@ namespace Template.Application.Models.Identity
         public string NewPassword { get; set; }
         public string OTP { get; set; }
     }
+
+    public class ResetPasswordResponse
+    {
+        public bool Status { get; set; }
+        public string Message { get; set; }
+    }
 }

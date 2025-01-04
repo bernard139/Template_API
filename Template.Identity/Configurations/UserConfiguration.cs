@@ -26,7 +26,10 @@ namespace Template.Identity.Configurations
                     UserName = "admin@localhost.com",
                     NormalizedUserName = "ADMIN@LOCALHOST.COM",
                     PasswordHash = hasher.HashPassword(null, "Password@1"),
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+                    DateCreated = DateTime.Now,
+                    IsActive = true,
+                    IsDeleted = false
                 },
                 new ApplicationUser()
                 {
@@ -38,7 +41,10 @@ namespace Template.Identity.Configurations
                     UserName = "user@localhost.com",
                     NormalizedUserName = "USER@LOCALHOST.COM",
                     PasswordHash = hasher.HashPassword(null, "Password@1"),
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+                    DateCreated = DateTime.Now,
+                    IsActive = true,
+                    IsDeleted = false
                 }
             );
         }

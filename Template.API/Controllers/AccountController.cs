@@ -12,11 +12,13 @@ namespace Template.API.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IForgotPasswordService _forgotPasswordService;
+        private readonly IAccountActivationService _accountActivationService;
 
-        public AccountController(IAuthService authService, IForgotPasswordService forgotPasswordService)
+        public AccountController(IAuthService authService, IForgotPasswordService forgotPasswordService, IAccountActivationService accountActivationService)
         {
             _authService = authService;
             _forgotPasswordService = forgotPasswordService;
+            _accountActivationService = accountActivationService;
         }
 
         [HttpPost("login")]
@@ -29,6 +31,12 @@ namespace Template.API.Controllers
         public async Task<ActionResult<RegistrationResponse>> Register(RegistrationRequest request)
         {
             return Ok(await _authService.Register(request));
+        }
+
+        [HttpPost("activate-account")]
+        public async Task<ActionResult<bool>> ActivateAccount(string userId)
+        {
+            return Ok(await _accountActivationService.AccountActivation(userId));
         }
 
         [HttpPost("forgot-password")]

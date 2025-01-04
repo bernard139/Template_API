@@ -6,11 +6,11 @@ namespace Template.Application.DTOs.Tasks.Validators
     {
         public ITaskDtoValidator()
         {
-            RuleFor(x => x.Title)
+            RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .NotNull();
 
-            RuleFor(x => x.Note)
+            RuleFor(x => x.Description)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .NotNull();
 

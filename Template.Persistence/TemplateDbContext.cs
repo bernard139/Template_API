@@ -29,6 +29,6 @@ namespace Template.Persistence
             return base.SaveChangesAsync(cancellationToken);
         }
 
-        public DbSet<MessagingSystem> MessagingSystems { get; set;}
+        public DbSet<Domain.Task> Tasks { get; set; }
     }
 }

@@ -10,15 +10,15 @@ namespace Template.Persistence.Repositories
     public class UnitOfWork : IUnitOfWork
     {
         private readonly TemplateDbContext _context;
-        //private ITaskRepository _taskRepository;
+        private ITaskRepository _taskRepository;
 
         public UnitOfWork(TemplateDbContext context)
         {
             _context = context;
         }
 
-        //public ITaskRepository TaskRepository => 
-        //    _taskRepository ??= new TaskRepository(_context);
+        public ITaskRepository TaskRepository => 
+         _taskRepository ??= new TaskRepository(_context);
 
         public void Dispose()
         {

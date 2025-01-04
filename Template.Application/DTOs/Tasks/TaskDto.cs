@@ -7,9 +7,13 @@ namespace Template.Application.DTOs.Tasks
 {
     public class TaskDto : BaseDto
     {
-        public string Title { get; set; }
-        public string Note { get; set; }
-        public string Status { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+    }
 
+    public class TaskModel : BaseModel
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
     }
 }

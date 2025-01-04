@@ -15,21 +15,22 @@ using Template.Application.Models;
 using Template.Application.Models.Enums;
 using Template.Application.Models.Identity;
 using Template.Application.DTOs;
+using Template.Application.Contracts.Persistence;
 
 namespace Template.Identity.Services
 {
-    public class ForgotPasswordService : BaseCommandResponse, IForgotPasswordService
+    public class ForgotPasswordService : ResponseBaseService, IForgotPasswordService
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ForgotPasswordService> _logger;
         private readonly IEmailSender _emailSender;
         private readonly IEmailRequests _emailRequest;
-
         private readonly TemplateIdentityDbContext _context;
         private readonly IConfiguration _configuration;
         public ForgotPasswordService(UserManager<ApplicationUser> userManager, ILogger<ForgotPasswordService> logger,
                                      IEmailSender emailSender,
-                                     TemplateIdentityDbContext context, IConfiguration configuration, IHttpContextAccessor contextAccessor, IEmailRequests emailRequest)
+                                     TemplateIdentityDbContext context, IConfiguration configuration,
+                                     IEmailRequests emailRequest)
         {
             _userManager = userManager;
             _logger = logger;
@@ -39,12 +40,14 @@ namespace Template.Identity.Services
             _emailRequest = emailRequest;
         }
 
-        public async Task<bool> SendForgotPasswordOTP(string email)
+        public async Task<ServerResponse<bool>> SendForgotPasswordOTP(string email)
         {
+            var response = new ServerResponse<bool>();
+
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
             {
-                throw new Exception($"ApplicationUser with {email} not found");
+                return SetError(response, responseDescs.NULL_REFERENCE);
             }
 
             string otp = Utilities.GenerateOTP();
@@ -66,7 +69,6 @@ namespace Template.Identity.Services
                 };
 
                 await _context.OTPs.AddAsync(otpEntry);
-
             }
             else
             {
@@ -91,27 +93,29 @@ namespace Template.Identity.Services
                 var emailResponse = await _emailSender.SendEmail(emailBody);
                 if (emailResponse != null)
                 {
-                    return true;
+                    return SetSuccess(response, true, responseDescs.SUCCESS);
                 }
                 else
                 {
                     _logger.LogInformation("Reset password  failed due to failed mail");
-                    return false;
+                    return SetError(response, responseDescs.EMAIL_NOT_SENT);
                 }
             }
             else
             {
                 _logger.LogInformation("Could not save or update the otp");
-                return false;
+                return SetError(response, responseDescs.RESET_PASSWORD_FAILED_OTP);
             }
         }
 
-        public async Task<bool> ResetPassword(ResetPasswordRequest request)
+        public async Task<ServerResponse<bool>> ResetPassword(ResetPasswordRequest request)
         {
+            var response = new ServerResponse<bool>();
+
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                throw new Exception($"ApplicationUser with {request.Email} not found");
+                return SetError(response, responseDescs.NULL_REFERENCE);
             }
 
             var hashedOtp = Utilities.EncrytptionDecryptionHelper.Hash(request.OTP);
@@ -119,13 +123,13 @@ namespace Template.Identity.Services
 
             if (otpEntry == null)
             {
-                
+                return SetError(response, responseDescs.NOT_FOUND);
             }
             bool isVerified = Utilities.EncrytptionDecryptionHelper.Verify(request.OTP, otpEntry.OTP);
 
             if (!isVerified)
             {
-                throw new Exception($"Invalid OTP");
+                return SetError(response, responseDescs.INVALID_OTP);
             }
 
             var passwordValidator = new PasswordValidator<ApplicationUser>();
@@ -134,13 +138,13 @@ namespace Template.Identity.Services
             if (passwordVerificationResult == PasswordVerificationResult.Success || passwordVerificationResult == PasswordVerificationResult.SuccessRehashNeeded)
             {
                 _logger.LogInformation("You can not reset with same password");
-                throw new Exception($"Same password error");
+                return SetError(response, responseDescs.SAME_PASSWORD);
             }
             var passwordValidationResult = await passwordValidator.ValidateAsync(_userManager, user, request.NewPassword);
             if (passwordValidationResult.Succeeded == false)
             {
                 _logger.LogInformation("Password did not meet the required criteria");
-                throw new Exception($"Invalid Password");
+                return SetError(response, responseDescs.INVALID_PASSWORD);
             }
             else
             {
@@ -150,14 +154,14 @@ namespace Template.Identity.Services
                 if (!isUpdated)
                 {
                     _logger.LogInformation("Could not update the OTP status");
-                    throw new Exception($"Failed to update OTP status");
+                    return SetError(response, responseDescs.RESET_PASSWORD_FAILED_OTP);
                 }
                 else
                 {
                     var resetPasswordResult = await _userManager.ResetPasswordAsync(user, otpEntry.Token, request.NewPassword);
                     if (resetPasswordResult.Succeeded)
                     {
-                        return true;
+                        return SetSuccess(response, true, responseDescs.SUCCESS);
                     }
                     else
                     {

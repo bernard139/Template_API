@@ -20,13 +20,13 @@ namespace Template.Infrastructure.Mail
     public class EmailSender : IEmailSender
     {
         private EmailSettings _emailsettings {  get; }
-        private readonly SmtpSettings _smtpSettings;
+        private SmtpSettings _smtpSettings { get; }
         private readonly ITemplateDbContext _context;
         private readonly ILogger<EmailSender> _logger;
-        public EmailSender(IOptions<EmailSettings> emailSettings, SmtpSettings smtpSettings, ILogger<EmailSender> logger)
+        public EmailSender(IOptions<EmailSettings> emailSettings, IOptions<SmtpSettings> smtpSettings, ILogger<EmailSender> logger)
         {
             _emailsettings = emailSettings.Value;
-            _smtpSettings = smtpSettings;
+            _smtpSettings = smtpSettings.Value;
             _logger = logger;
         }
         public async Task<bool> SendEmail(Email email)
@@ -66,6 +66,8 @@ namespace Template.Infrastructure.Mail
             email.Body = builder.ToMessageBody();
 
             using SmtpClient smtpClient = new SmtpClient();
+
+            smtpClient.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
             smtpClient.Connect(_smtpSettings.Host, _smtpSettings.Port, MailKit.Security.SecureSocketOptions.StartTls);
 

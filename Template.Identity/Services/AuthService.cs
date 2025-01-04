@@ -12,40 +12,60 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
+using Template.Application.Contracts.Infrastructure;
+using Template.Application.DTOs;
+using Template.Application.Responses;
+using Microsoft.AspNetCore.Http;
+using Template.Application.Contracts.Persistence;
+using Mapster;
+using Microsoft.Extensions.Configuration;
 
 namespace Template.Identity.Services
 {
-    public class AuthService : IAuthService
+    public class AuthService : ResponseBaseService, IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IEmailRequests _emailRequests;
+        private readonly IEmailSender _emailSender;
         private readonly JwtSettings _jwtSettings;
+        private readonly IConfiguration _configuration;
 
         public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
-            IOptions<JwtSettings> jwtSettings)
+            IOptions<JwtSettings> jwtSettings, IEmailRequests emailRequests, IEmailSender emailSender, IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _emailRequests = emailRequests;
+            _emailSender = emailSender;
             _jwtSettings = jwtSettings.Value;
+            _configuration = configuration;
         }
 
-        public async Task<AuthResponse> Login(AuthRequest authRequest)
+        public async Task<ServerResponse<AuthResponse>> Login(AuthRequest authRequest)
         {
+            var response = new ServerResponse<AuthResponse>();
+
             ApplicationUser applicationUser =  await _userManager.FindByEmailAsync(authRequest.Email);
             if (applicationUser == null)
             {
-                throw new Exception($"ApplicationUser with {authRequest.Email} not found");
+                return SetError(response, responseDescs.User_NOT_FOUND);
             }
 
-            SignInResult result = await _signInManager.PasswordSignInAsync(applicationUser.UserName, authRequest.Password, false, lockoutOnFailure: false);
-            if (!result.Succeeded)
+            if (!applicationUser.EmailConfirmed)
             {
-                throw new Exception($"Credentials for {authRequest.Email} are not valid");
+                return SetError(response, responseDescs.EMAIL_NOT_CONFIRMED);
+            }
+
+            var isPasswordValid = await _userManager.CheckPasswordAsync(applicationUser, authRequest.Password);
+            if (!isPasswordValid)
+            {
+                return SetError(response, responseDescs.INVALID_PASSWORD);
             }
 
             JwtSecurityToken jwtSecurityToken = await GenerateToken(applicationUser);
 
-            return new AuthResponse
+            response.Data = new AuthResponse
             {
                 Id = applicationUser.Id,
                 Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
@@ -53,42 +73,61 @@ namespace Template.Identity.Services
                 UserName = applicationUser.UserName
             };
 
+            return SetSuccess(response, response.Data, responseDescs.SUCCESS);
         }
 
-        public async Task<RegistrationResponse> Register(RegistrationRequest registrationRequest)
+        public async Task<ServerResponse<RegistrationResponse>> Register(RegistrationRequest registrationRequest)
         {
-            ApplicationUser existingUser = await _userManager.FindByNameAsync(registrationRequest.Email);
-            if (existingUser != null)
-            {
-                throw new Exception($"Username '{registrationRequest.UserName}' already exists.");
-            }
+            var response = new ServerResponse<RegistrationResponse>();
 
-            ApplicationUser user = new ApplicationUser
+            var existingUser = await _userManager.FindByEmailAsync(registrationRequest.Email);
+            if (existingUser == null)
             {
-                Email = registrationRequest.Email,
-                FirstName = registrationRequest.FirstName,
-                LastName = registrationRequest.LastName,
-                UserName = registrationRequest.UserName,
-                EmailConfirmed = true
-            };
+                var existingUsername = await _userManager.FindByNameAsync(registrationRequest.UserName);
+                if (existingUsername != null)
+                {
+                    return SetError(response, responseDescs.USERNAME_EXISTS);
+                }
 
-            var existingEmail = await _userManager.FindByEmailAsync(registrationRequest.Email);
-            if (existingEmail == null)
-            {
+                ApplicationUser user = registrationRequest.Adapt<ApplicationUser>();
+                user.DateCreated = DateTime.Now;
+                user.IsActive = true;
+                user.IsDeleted = false;
+
                 var result = await _userManager.CreateAsync(user, registrationRequest.Password);
                 if (result.Succeeded)
-                {
+                { 
                     await _userManager.AddToRoleAsync(user, "User");
-                    return new RegistrationResponse() { UserId = user.Id };
+
+                    var baseUrl = _configuration["SystemSettings:ApiBaseUrl"];
+                    var accountActivationDto = new AccountActivationDTO
+                    {
+                        UserName = user.UserName,
+                        Email = user.Email,
+                        ActivationLink = $"{baseUrl}/Account/AccountActivate?userId={user.Id}"
+                    };
+
+                    var emailBody = await _emailRequests.AccountActivation(accountActivationDto);
+                    var emailResponse = await _emailSender.SendEmail(emailBody);
+                    if (emailResponse != null)
+                    {
+                        response.Data = new RegistrationResponse { UserId = user.Id };
+
+                        return SetSuccess(response, response.Data, responseDescs.SUCCESS);
+                    }
+                    else
+                    {
+                        return SetError(response, responseDescs.EMAIL_NOT_SENT);
+                    }
                 }
                 else
                 {
-                    throw new Exception($"{result.Errors}");
+                    return SetError(response, responseDescs.REGITRATION_FAILED);
                 }
             }
             else
             {
-                throw new Exception($"Email {registrationRequest.Email} already exists.");
+                return SetError(response, responseDescs.USER_ALREADY_EXISTS);
             }
         }
 

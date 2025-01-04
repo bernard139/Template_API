@@ -5,14 +5,13 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Template.Domain.Common;
 
 namespace Template.Identity.Models
 {
-    public class ApplicationUser : IdentityUser
+    public class ApplicationRole : IdentityRole
     {
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+        public string Name { get; set; }
+        public string RoleDescription { get; set; }
         public DateTime DateCreated { get; set; }
 
         [DefaultValue(false)]
@@ -20,5 +19,6 @@ namespace Template.Identity.Models
 
         [DefaultValue(true)]
         public bool IsActive { get; set; }
+
     }
 }
