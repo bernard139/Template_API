@@ -11,14 +11,10 @@ namespace Template.API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAuthService _authService;
-        private readonly IForgotPasswordService _forgotPasswordService;
-        private readonly IAccountActivationService _accountActivationService;
 
-        public AccountController(IAuthService authService, IForgotPasswordService forgotPasswordService, IAccountActivationService accountActivationService)
+        public AccountController(IAuthService authService)
         {
             _authService = authService;
-            _forgotPasswordService = forgotPasswordService;
-            _accountActivationService = accountActivationService;
         }
 
         [HttpPost("login")]
@@ -32,23 +28,20 @@ namespace Template.API.Controllers
         {
             return Ok(await _authService.Register(request));
         }
-
-        [HttpPost("activate-account")]
-        public async Task<ActionResult<bool>> ActivateAccount(string userId)
+        [HttpPost("verify-email")]
+        public async Task<ActionResult<RegistrationResponse>> VerifyEmail(string email, string token)
         {
-            return Ok(await _accountActivationService.AccountActivation(userId));
+            return Ok(await _authService.VerifyEmailAsync(email, token));
         }
-
         [HttpPost("forgot-password")]
-        public async Task<ActionResult<bool>> SendForgotPasswordOTP(string email)
+        public async Task<ActionResult<RegistrationResponse>> ForgotPassword(string email)
         {
-            return Ok(await _forgotPasswordService.SendForgotPasswordOTP(email));
+            return Ok(await _authService.ForgotPasswordAsync(email));
         }
-
         [HttpPost("reset-password")]
-        public async Task<ActionResult<bool>> ResetPassword(ResetPasswordRequest request)
+        public async Task<ActionResult<RegistrationResponse>> ResetPassword(string email, string token, string newPassword)
         {
-            return Ok(await _forgotPasswordService.ResetPassword(request));
+            return Ok(await _authService.ResetPasswordAsync(email, token, newPassword));
         }
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using EllipticCurve;
 using Microsoft.AspNetCore.DataProtection;
 using Template.API.Middleware;
+using Template.Misc;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,7 @@ builder.Services.ConfigureApplicationServices();
 builder.Services.ConfigureInfrastructureServices(builder.Configuration);
 builder.Services.ConfigurePersistenceServices(builder.Configuration);
 builder.Services.ConfigureIdentityServices(builder.Configuration);
+builder.Services.ConfigureMiscServices(builder.Configuration);
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();

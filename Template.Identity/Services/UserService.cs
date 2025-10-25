@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Mapster;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Template.Application.Contracts.Identity;
+using Template.Application.DTOs.Identity;
+using Template.Application.Exceptions;
 using Template.Application.Models.Identity;
 using Template.Identity.Models;
 
@@ -19,28 +22,56 @@ namespace Template.Identity.Services
             _userManager = userManager;
         }
 
-        public async Task<List<User>> GetUsers()
+        public async Task<List<UserDto>> GetUsers()
         {
             var users = await _userManager.GetUsersInRoleAsync("User");
-            return users.Select(x => new User
+            return users.Select(x => new UserDto
             {
                 Id = x.Id,
                 Email = x.Email,
                 FirstName = x.FirstName,
                 LastName = x.LastName,
+                IsActive = x.IsActive,
+                EmailConfirmaed = x.EmailConfirmed,
+                DateCreated = x.DateCreated
             }).ToList();
         }
 
-        public async Task<UserRequest> GetUserByEmail(string email)
+        public async Task<UserDto> GetUserByEmail(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
 
-            return new UserRequest
+            if (user == null)
+                return null;
+
+            return new UserDto
             {
                 Id = user.Id,
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
+                IsActive = user.IsActive,
+                EmailConfirmaed = user.EmailConfirmed,
+                DateCreated = user.DateCreated
+            };
+        }
+
+        public async Task<UserDto> GetUserById(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+                return null;
+
+            return new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                IsActive = user.IsActive,
+                EmailConfirmaed = user.EmailConfirmed,
+                DateCreated = user.DateCreated
             };
         }
 
@@ -54,37 +85,121 @@ namespace Template.Identity.Services
             }
 
             return await _userManager.GetRolesAsync(user);
-
         }
 
-        public async Task<ChangePasswordResponse> ChangePassword(ChangePasswordRequest request)
+        public async Task<IdentityResult> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
         {
-            var user = await _userManager.FindByIdAsync(request.UserId);
+            var user = await _userManager.FindByIdAsync(userId);
+
             if (user == null)
             {
-                throw new Exception($"User not found");
+                return IdentityResult.Failed(new IdentityError { Description = "User not found." });
             }
 
-            var isCurrentPasswordValid = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
-            if (!isCurrentPasswordValid)
+            return await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        }
+
+        public async Task<UserDto> UpdateUserAsync(UpdateUserDto updateRequest)
+        {
+            var user = await _userManager.FindByIdAsync(updateRequest.Id);
+
+            if (user == null)
             {
-                throw new Exception($"Password does not match");
+                throw new NotFoundException($"User with ID {updateRequest.Id} not found.", updateRequest.Id);
             }
 
-            var passwordValidator = new PasswordValidator<ApplicationUser>();
-            var passwordValidationResult = await passwordValidator.ValidateAsync(_userManager, user, request.NewPassword);
-            if (!passwordValidationResult.Succeeded)
-            {
-                throw new Exception($"Failed to validate password");
-            }
+            updateRequest.Adapt(user);
 
-            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+            var result = await _userManager.UpdateAsync(user);
+
             if (!result.Succeeded)
             {
-                throw new Exception($"Request not successful");
+                throw new ApplicationException($"Failed to update user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
 
-            return new ChangePasswordResponse { Status = true, Message = "Password changed successfully"};
+            return user.Adapt<UserDto>();
+        }
+        public async Task<IdentityResult> ActivateUserAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "User not found." });
+            }
+
+            // Set user as active
+            user.IsActive = true;
+
+            // Also remove any lockout if present
+            await _userManager.SetLockoutEndDateAsync(user, null);
+
+            var result = await _userManager.UpdateAsync(user);
+            return result;
+        }
+
+        public async Task<IdentityResult> DeactivateUserAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "User not found." });
+            }
+
+            // Set user as inactive
+            user.IsActive = false;
+
+            var result = await _userManager.UpdateAsync(user);
+            return result;
+        }
+
+        public async Task<IdentityResult> DeleteUserAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "User not found." });
+            }
+
+            return await _userManager.DeleteAsync(user);
+        }
+
+        public async Task<IdentityResult> ConfirmEmailAsync(string userId, string token)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "User not found." });
+            }
+
+            return await _userManager.ConfirmEmailAsync(user, token);
+        }
+
+        public async Task<string> GeneratePasswordResetTokenAsync(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            return await _userManager.GeneratePasswordResetTokenAsync(user);
+        }
+
+        public async Task<IdentityResult> ResetPasswordAsync(string email, string token, string newPassword)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "User not found." });
+            }
+
+            return await _userManager.ResetPasswordAsync(user, token, newPassword);
         }
     }
 }

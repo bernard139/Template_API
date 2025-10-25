@@ -3,10 +3,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace Template.Identity.Migrations
 {
-    public partial class First : Migration
+    /// <inheritdoc />
+    public partial class Init : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -14,7 +18,7 @@ namespace Template.Identity.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Discriminator = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Discriminator = table.Column<string>(type: "nvarchar(21)", maxLength: 21, nullable: false),
                     RoleDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: true),
@@ -193,8 +197,8 @@ namespace Template.Identity.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "DateCreated", "Discriminator", "IsActive", "IsDeleted", "Name", "NormalizedName", "RoleDescription" },
                 values: new object[,]
                 {
-                    { "a4f78d09-86e3-4e96-a91b-3713e8043c7c", null, new DateTime(2025, 1, 3, 8, 23, 2, 883, DateTimeKind.Local).AddTicks(8255), "ApplicationRole", true, false, null, "ADMINISTRATOR", "Administrative role" },
-                    { "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd", null, new DateTime(2025, 1, 3, 8, 23, 2, 883, DateTimeKind.Local).AddTicks(8275), "ApplicationRole", true, false, null, "USER", "User role" }
+                    { "a4f78d09-86e3-4e96-a91b-3713e8043c7c", null, new DateTime(2025, 10, 24, 8, 44, 43, 286, DateTimeKind.Local).AddTicks(172), "ApplicationRole", true, false, null, "ADMINISTRATOR", "Administrative role" },
+                    { "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd", null, new DateTime(2025, 10, 24, 8, 44, 43, 286, DateTimeKind.Local).AddTicks(213), "ApplicationRole", true, false, null, "USER", "User role" }
                 });
 
             migrationBuilder.InsertData(
@@ -202,19 +206,18 @@ namespace Template.Identity.Migrations
                 columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "DateCreated", "Email", "EmailConfirmed", "FirstName", "IsActive", "IsDeleted", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
-                    { "7f8df141-8a3e-4f3f-82d3-0a89626a4b1c", 0, "1c89eb17-0d11-41a9-b917-65e0dc2e4ecb", new DateTime(2025, 1, 3, 8, 23, 3, 72, DateTimeKind.Local).AddTicks(6422), "admin@localhost.com", true, "System", true, false, "Admin", false, null, "ADMIN@LOCALHOST.COM", "ADMIN@LOCALHOST.COM", "AQAAAAIAAYagAAAAEKrEF3NRzo//vPYfkQEnIIG89Zhf5/1jka1Qin2/pdkE6Z7CiIpb2BSdyHNcNQNFQw==", null, false, "8cc3cea7-c986-403b-a5ca-999ed75aa232", false, "admin@localhost.com" },
-                    { "b25a925a-9fbd-4e49-89f1-8ec446a8f023", 0, "74111ee3-397d-4f58-b622-2d89616a8b10", new DateTime(2025, 1, 3, 8, 23, 3, 262, DateTimeKind.Local).AddTicks(8568), "user@localhost.com", true, "System", true, false, "USER", false, null, "USER@LOCALHOST.COM", "USER@LOCALHOST.COM", "AQAAAAIAAYagAAAAEKW2jwfTk6u7cNYV0djnRqVIEBlbjMouChT1Bn6jslkIiBowmWa5kXCzzDH4cOEVvw==", null, false, "ecc96c56-fe9a-4454-887a-d42f498f13cb", false, "user@localhost.com" }
+                    { "7f8df141-8a3e-4f3f-82d3-0a89626a4b1c", 0, "e5b07c3f-be23-489b-82da-c84ba6d59758", new DateTime(2025, 10, 24, 8, 44, 43, 546, DateTimeKind.Local).AddTicks(2948), "admin@localhost.com", true, "System", true, false, "Admin", false, null, "ADMIN@LOCALHOST.COM", "ADMIN@LOCALHOST.COM", "AQAAAAIAAYagAAAAEDhnOQvtEVm6nUR6CmG1xd90Pq/YpAqOTuwggY/h43IndMLslPWSjqs+oHLipFc1FA==", null, false, "d9313f4e-f718-4e74-a7ec-022f8e8e7690", false, "admin@localhost.com" },
+                    { "b25a925a-9fbd-4e49-89f1-8ec446a8f023", 0, "604f9178-3863-4a42-bb8a-6616d4386e18", new DateTime(2025, 10, 24, 8, 44, 43, 856, DateTimeKind.Local).AddTicks(4918), "user@localhost.com", true, "System", true, false, "USER", false, null, "USER@LOCALHOST.COM", "USER@LOCALHOST.COM", "AQAAAAIAAYagAAAAEM52Xv/cZDH7vScAreO0badXN3WYsBlr5bSi3QKzKHNqfwV5h/X49gTBFMi/2yfRFg==", null, false, "7606ef80-4804-4adc-b4d8-1fd428d73e08", false, "user@localhost.com" }
                 });
 
             migrationBuilder.InsertData(
                 table: "AspNetUserRoles",
                 columns: new[] { "RoleId", "UserId" },
-                values: new object[] { "a4f78d09-86e3-4e96-a91b-3713e8043c7c", "7f8df141-8a3e-4f3f-82d3-0a89626a4b1c" });
-
-            migrationBuilder.InsertData(
-                table: "AspNetUserRoles",
-                columns: new[] { "RoleId", "UserId" },
-                values: new object[] { "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd", "b25a925a-9fbd-4e49-89f1-8ec446a8f023" });
+                values: new object[,]
+                {
+                    { "a4f78d09-86e3-4e96-a91b-3713e8043c7c", "7f8df141-8a3e-4f3f-82d3-0a89626a4b1c" },
+                    { "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd", "b25a925a-9fbd-4e49-89f1-8ec446a8f023" }
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -256,6 +259,7 @@ namespace Template.Identity.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

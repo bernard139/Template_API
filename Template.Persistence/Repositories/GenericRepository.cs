@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using Template.Application.Contracts.Persistence;
-using static Microsoft.AspNetCore.Hosting.Internal.HostingApplication;
 
 namespace Template.Persistence.Repositories
 {

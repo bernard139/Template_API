@@ -17,10 +17,10 @@ namespace Template.Identity.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.26")
+                .HasAnnotation("ProductVersion", "8.0.21")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -33,7 +33,8 @@ namespace Template.Identity.Migrations
 
                     b.Property<string>("Discriminator")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(21)
+                        .HasColumnType("nvarchar(21)");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
@@ -52,7 +53,9 @@ namespace Template.Identity.Migrations
 
                     b.ToTable("AspNetRoles", (string)null);
 
-                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityRole");
+                    b.HasDiscriminator().HasValue("IdentityRole");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -61,7 +64,7 @@ namespace Template.Identity.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
@@ -86,7 +89,7 @@ namespace Template.Identity.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
@@ -259,8 +262,8 @@ namespace Template.Identity.Migrations
                         {
                             Id = "7f8df141-8a3e-4f3f-82d3-0a89626a4b1c",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "1c89eb17-0d11-41a9-b917-65e0dc2e4ecb",
-                            DateCreated = new DateTime(2025, 1, 3, 8, 23, 3, 72, DateTimeKind.Local).AddTicks(6422),
+                            ConcurrencyStamp = "e5b07c3f-be23-489b-82da-c84ba6d59758",
+                            DateCreated = new DateTime(2025, 10, 24, 8, 44, 43, 546, DateTimeKind.Local).AddTicks(2948),
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "System",
@@ -270,9 +273,9 @@ namespace Template.Identity.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEKrEF3NRzo//vPYfkQEnIIG89Zhf5/1jka1Qin2/pdkE6Z7CiIpb2BSdyHNcNQNFQw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEDhnOQvtEVm6nUR6CmG1xd90Pq/YpAqOTuwggY/h43IndMLslPWSjqs+oHLipFc1FA==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "8cc3cea7-c986-403b-a5ca-999ed75aa232",
+                            SecurityStamp = "d9313f4e-f718-4e74-a7ec-022f8e8e7690",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         },
@@ -280,8 +283,8 @@ namespace Template.Identity.Migrations
                         {
                             Id = "b25a925a-9fbd-4e49-89f1-8ec446a8f023",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "74111ee3-397d-4f58-b622-2d89616a8b10",
-                            DateCreated = new DateTime(2025, 1, 3, 8, 23, 3, 262, DateTimeKind.Local).AddTicks(8568),
+                            ConcurrencyStamp = "604f9178-3863-4a42-bb8a-6616d4386e18",
+                            DateCreated = new DateTime(2025, 10, 24, 8, 44, 43, 856, DateTimeKind.Local).AddTicks(4918),
                             Email = "user@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "System",
@@ -291,9 +294,9 @@ namespace Template.Identity.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "USER@LOCALHOST.COM",
                             NormalizedUserName = "USER@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEKW2jwfTk6u7cNYV0djnRqVIEBlbjMouChT1Bn6jslkIiBowmWa5kXCzzDH4cOEVvw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEM52Xv/cZDH7vScAreO0badXN3WYsBlr5bSi3QKzKHNqfwV5h/X49gTBFMi/2yfRFg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "ecc96c56-fe9a-4454-887a-d42f498f13cb",
+                            SecurityStamp = "7606ef80-4804-4adc-b4d8-1fd428d73e08",
                             TwoFactorEnabled = false,
                             UserName = "user@localhost.com"
                         });
@@ -305,7 +308,7 @@ namespace Template.Identity.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -372,7 +375,7 @@ namespace Template.Identity.Migrations
                         {
                             Id = "a4f78d09-86e3-4e96-a91b-3713e8043c7c",
                             NormalizedName = "ADMINISTRATOR",
-                            DateCreated = new DateTime(2025, 1, 3, 8, 23, 2, 883, DateTimeKind.Local).AddTicks(8255),
+                            DateCreated = new DateTime(2025, 10, 24, 8, 44, 43, 286, DateTimeKind.Local).AddTicks(172),
                             IsActive = true,
                             IsDeleted = false,
                             RoleDescription = "Administrative role"
@@ -381,7 +384,7 @@ namespace Template.Identity.Migrations
                         {
                             Id = "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd",
                             NormalizedName = "USER",
-                            DateCreated = new DateTime(2025, 1, 3, 8, 23, 2, 883, DateTimeKind.Local).AddTicks(8275),
+                            DateCreated = new DateTime(2025, 10, 24, 8, 44, 43, 286, DateTimeKind.Local).AddTicks(213),
                             IsActive = true,
                             IsDeleted = false,
                             RoleDescription = "User role"

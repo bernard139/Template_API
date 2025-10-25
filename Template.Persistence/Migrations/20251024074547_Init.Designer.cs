@@ -12,65 +12,18 @@ using Template.Persistence;
 namespace Template.Persistence.Migrations
 {
     [DbContext(typeof(TemplateDbContext))]
-    [Migration("20250101065616_Task")]
-    partial class Task
+    [Migration("20251024074547_Init")]
+    partial class Init
     {
+        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.26")
+                .HasAnnotation("ProductVersion", "8.0.21")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
-
-            modelBuilder.Entity("Template.Domain.MessagingSystem", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DeletedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool?>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MessageType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("Status")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("MessagingSystems");
-                });
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Template.Domain.Task", b =>
                 {
@@ -78,7 +31,7 @@ namespace Template.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");

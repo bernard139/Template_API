@@ -1,134 +1,156 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Template.Application.Contracts.Identity;
-using Template.Application.Models.Identity;
-using Template.Identity.Models;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using Microsoft.IdentityModel.Tokens;
 using Template.Application.Contracts.Infrastructure;
-using Template.Application.DTOs;
-using Template.Application.Responses;
-using Microsoft.AspNetCore.Http;
 using Template.Application.Contracts.Persistence;
-using Mapster;
-using Microsoft.Extensions.Configuration;
+using Template.Application.DTOs;
+using Template.Application.DTOs.Identity;
+using Template.Application.Models.Identity;
+using Template.Application.Responses;
+using Template.Identity.Models;
 
 namespace Template.Identity.Services
 {
-    public class AuthService : ResponseBaseService, IAuthService
+    public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IEmailRequests _emailRequests;
-        private readonly IEmailSender _emailSender;
         private readonly JwtSettings _jwtSettings;
-        private readonly IConfiguration _configuration;
+        private readonly IEmailRequest _emailRequest;
+        private readonly IUserService _userService;
 
         public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
-            IOptions<JwtSettings> jwtSettings, IEmailRequests emailRequests, IEmailSender emailSender, IConfiguration configuration)
+            IOptions<JwtSettings> jwtSettings, IEmailRequest emailRequest, IUserService userService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _emailRequests = emailRequests;
-            _emailSender = emailSender;
             _jwtSettings = jwtSettings.Value;
-            _configuration = configuration;
+            _emailRequest = emailRequest;
+            _userService = userService;
         }
 
-        public async Task<ServerResponse<AuthResponse>> Login(AuthRequest authRequest)
+        public async Task<AuthResponse> Login(AuthRequest authRequest)
         {
-            var response = new ServerResponse<AuthResponse>();
-
-            ApplicationUser applicationUser =  await _userManager.FindByEmailAsync(authRequest.Email);
+            ApplicationUser applicationUser = await _userManager.FindByEmailAsync(authRequest.Email);
             if (applicationUser == null)
             {
-                return SetError(response, responseDescs.User_NOT_FOUND);
+                throw new Exception($"ApplicationUser with {authRequest.Email} not found");
             }
 
-            if (!applicationUser.EmailConfirmed)
+            SignInResult result = await _signInManager.PasswordSignInAsync(applicationUser.UserName, authRequest.Password, false, lockoutOnFailure: false);
+            if (!result.Succeeded)
             {
-                return SetError(response, responseDescs.EMAIL_NOT_CONFIRMED);
-            }
-
-            var isPasswordValid = await _userManager.CheckPasswordAsync(applicationUser, authRequest.Password);
-            if (!isPasswordValid)
-            {
-                return SetError(response, responseDescs.INVALID_PASSWORD);
+                throw new Exception($"Credentials for {authRequest.Email} are not valid");
             }
 
             JwtSecurityToken jwtSecurityToken = await GenerateToken(applicationUser);
 
-            response.Data = new AuthResponse
+            return new AuthResponse
             {
                 Id = applicationUser.Id,
                 Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
                 Email = applicationUser.Email,
                 UserName = applicationUser.UserName
             };
-
-            return SetSuccess(response, response.Data, responseDescs.SUCCESS);
         }
 
-        public async Task<ServerResponse<RegistrationResponse>> Register(RegistrationRequest registrationRequest)
+        public async Task<RegistrationResponse> Register(RegistrationRequest registrationRequest)
         {
-            var response = new ServerResponse<RegistrationResponse>();
-
-            var existingUser = await _userManager.FindByEmailAsync(registrationRequest.Email);
-            if (existingUser == null)
+            var existingEmail = await _userManager.FindByEmailAsync(registrationRequest.Email);
+            if (existingEmail == null)
             {
-                var existingUsername = await _userManager.FindByNameAsync(registrationRequest.UserName);
-                if (existingUsername != null)
-                {
-                    return SetError(response, responseDescs.USERNAME_EXISTS);
-                }
-
                 ApplicationUser user = registrationRequest.Adapt<ApplicationUser>();
+                user.UserName = registrationRequest.Email;
                 user.DateCreated = DateTime.Now;
-                user.IsActive = true;
-                user.IsDeleted = false;
-
                 var result = await _userManager.CreateAsync(user, registrationRequest.Password);
                 if (result.Succeeded)
-                { 
+                {
                     await _userManager.AddToRoleAsync(user, "User");
 
-                    var baseUrl = _configuration["SystemSettings:ApiBaseUrl"];
-                    var accountActivationDto = new AccountActivationDTO
-                    {
-                        UserName = user.UserName,
-                        Email = user.Email,
-                        ActivationLink = $"{baseUrl}/Account/AccountActivate?userId={user.Id}"
-                    };
+                    var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-                    var emailBody = await _emailRequests.AccountActivation(accountActivationDto);
-                    var emailResponse = await _emailSender.SendEmail(emailBody);
-                    if (emailResponse != null)
-                    {
-                        response.Data = new RegistrationResponse { UserId = user.Id };
+                    var userDto = user.Adapt<UserDto>();
 
-                        return SetSuccess(response, response.Data, responseDescs.SUCCESS);
-                    }
-                    else
+                    var emailResult = await _emailRequest.SendVerificationEmail(userDto, token);
+                    if (!emailResult)
                     {
-                        return SetError(response, responseDescs.EMAIL_NOT_SENT);
+                        throw new Exception($"Fsiled to send verification email to {registrationRequest.Email}.");
                     }
+                    return new RegistrationResponse() { UserId = user.Id };
                 }
                 else
                 {
-                    return SetError(response, responseDescs.REGITRATION_FAILED);
+                    throw new Exception($"{result.Errors}");
                 }
             }
             else
             {
-                return SetError(response, responseDescs.USER_ALREADY_EXISTS);
+                throw new Exception($"Email {registrationRequest.Email} already exists.");
             }
+        }
+
+        public async Task<bool> VerifyEmailAsync(string email, string token)
+        {
+            var decodedToken = WebUtility.UrlDecode(token);
+
+            ApplicationUser user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                throw new Exception($"ApplicationUser with {email} not found");
+            }
+
+            user.IsActive = true;
+            var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new Exception($"Email verification failed: {errors}");
+            }
+            return true;
+        }
+
+        public async Task<bool> ForgotPasswordAsync(string email)
+        {
+            UserDto user = await _userService.GetUserByEmail(email);
+            if (user == null)
+            {
+                throw new Exception($"ApplicationUser with {email} not found");
+            }
+
+            var token = await _userService.GeneratePasswordResetTokenAsync(email);
+
+            var result = await _emailRequest.SendPasswordResetTokenEmail(user, token);
+            if (!result)
+            {
+                throw new Exception($"Failed to send password reset token email to {email}.");
+            }
+            return true;
+        }
+
+        public async Task<bool> ResetPasswordAsync(string email, string token, string newPassword)
+        {
+            var decodedToken = WebUtility.UrlDecode(token);
+
+            var result = await _userService.ResetPasswordAsync(email, decodedToken, newPassword);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new Exception($"Failed to reset password: {errors}");
+            }
+            return true;
         }
 
         public async Task<JwtSecurityToken> GenerateToken(ApplicationUser applicationUser)
@@ -137,7 +159,7 @@ namespace Template.Identity.Services
             var roles = await _userManager.GetRolesAsync(applicationUser);
 
             var roleClaims = new List<Claim>();
-            
+
             foreach (var role in roles)
             {
                 roleClaims.Add(new Claim(ClaimTypes.Role, role));
@@ -148,6 +170,7 @@ namespace Template.Identity.Services
                 new Claim(JwtRegisteredClaimNames.Email, applicationUser.Email),
                 new Claim(JwtRegisteredClaimNames.Sub, applicationUser.UserName),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("firstName", applicationUser.FirstName),
                 new Claim("uid", applicationUser.Id),
             }
             .Union(userClaims)

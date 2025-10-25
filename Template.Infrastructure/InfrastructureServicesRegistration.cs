@@ -16,7 +16,7 @@ namespace Template.Infrastructure
             services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
             //    services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<SmtpSettings>>().Value);
             services.AddTransient<IEmailSender, EmailSender>();
-            services.AddTransient<IEmailRequests, EmailRequests>();
+            services.AddTransient<IEmailRequest, EmailRequest>();
 
             return services;
         }

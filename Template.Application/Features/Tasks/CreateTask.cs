@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Http;
 using Template.Application.Contracts.Infrastructure;
 using Template.Application.Contracts.Persistence;
@@ -23,11 +22,9 @@ namespace Template.Application.Features.Tasks
         public class CreateTaskCommandHandler : ResponseBaseService, IRequestHandler<CreateTaskCommand, ServerResponse<bool>>
         {
             private readonly IUnitOfWork _unitOfWork;
-            private readonly IMapper _mapper;
 
-            public CreateTaskCommandHandler(IMapper mapper, IUnitOfWork unitOfWork)
+            public CreateTaskCommandHandler(IUnitOfWork unitOfWork)
             {
-                _mapper = mapper;
                 _unitOfWork = unitOfWork;
             }
 

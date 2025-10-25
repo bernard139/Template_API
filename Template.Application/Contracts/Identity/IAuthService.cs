@@ -10,7 +10,10 @@ namespace Template.Application.Contracts.Identity
 {
     public interface IAuthService
     {
-        Task<ServerResponse<AuthResponse>> Login(AuthRequest authRequest);
-        Task<ServerResponse<RegistrationResponse>> Register(RegistrationRequest registrationRequest);
+        Task<AuthResponse> Login(AuthRequest authRequest);
+        Task<RegistrationResponse> Register(RegistrationRequest registrationRequest);
+        Task<bool> VerifyEmailAsync(string email, string token);
+        Task<bool> ForgotPasswordAsync(string email);
+        Task<bool> ResetPasswordAsync(string email, string token, string newPassword);
     }
 }
