@@ -50,11 +50,30 @@ namespace Template.Identity.Services
                 throw new Exception($"ApplicationUser with {authRequest.Email} not found");
             }
 
+            // Check if email is confirmed
+            if (!await _userManager.IsEmailConfirmedAsync(applicationUser))
+            {
+                throw new Exception("Email not confirmed. Please verify your email address.");
+            }
+
             SignInResult result = await _signInManager.PasswordSignInAsync(applicationUser.UserName, authRequest.Password, false, lockoutOnFailure: false);
             if (!result.Succeeded)
             {
-                throw new Exception($"Credentials for {authRequest.Email} are not valid");
+                if (result.IsLockedOut)
+                {
+                    throw new Exception("Account locked out. Please try again later.");
+                }
+                else if (result.IsNotAllowed)
+                {
+                    throw new Exception("Login not allowed. Please verify your email address.");
+                }
+                else
+                {
+                    throw new Exception($"Credentials for {authRequest.Email} are not valid");
+                }
             }
+
+            var roles = await _userManager.GetRolesAsync(applicationUser);
 
             JwtSecurityToken jwtSecurityToken = await GenerateToken(applicationUser);
 
@@ -63,7 +82,9 @@ namespace Template.Identity.Services
                 Id = applicationUser.Id,
                 Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
                 Email = applicationUser.Email,
-                UserName = applicationUser.UserName
+                UserName = applicationUser.UserName,
+                ImageUrl = applicationUser.ImageUrl,
+                Roles = roles.ToList()
             };
         }
 

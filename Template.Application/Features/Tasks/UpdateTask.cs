@@ -17,6 +17,7 @@ namespace Template.Application.Features.Tasks
     {
         public class UpdateTaskCommand : IRequest<ServerResponse<bool>>
         {
+            public string UserId { get; set; } = string.Empty;
             public UpdateTaskDto UpdateTaskDto { get; set; } = null!;
         }
 
@@ -41,9 +42,11 @@ namespace Template.Application.Features.Tasks
                 if (task == null)
                 { return SetError(response, responseDescs.NULL_REFERENCE); }
 
-                var updateTask = request.UpdateTaskDto.Adapt<Domain.Task>();
+                request.Adapt(task);
+                task.ModifiedBy = request.UserId;
+                task.ModifiedDate = DateTime.UtcNow;
 
-                await _unitOfWork.TaskRepository.UpdateAsync(updateTask);
+                await _unitOfWork.TaskRepository.UpdateAsync(task);
                 await _unitOfWork.Save();
 
                 return SetSuccess(response, true, responseDescs.SUCCESS);

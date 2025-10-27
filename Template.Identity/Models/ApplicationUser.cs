@@ -11,9 +11,11 @@ namespace Template.Identity.Models
 {
     public class ApplicationUser : IdentityUser
     {
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
         public DateTime DateCreated { get; set; }
+        public DateTime DateModified { get; set; }
 
         [DefaultValue(false)]
         public bool IsDeleted { get; set; }

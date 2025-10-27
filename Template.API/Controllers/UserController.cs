@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Template.Application.Contracts.Identity;
 using Template.Application.DTOs.Identity;
+using Template.Application.Models.Enums;
 using Template.Application.Models.Identity;
 using Template.Identity.Services;
 
@@ -31,8 +32,17 @@ namespace Template.API.Controllers
         [HttpPost]
         public async Task<ActionResult<UserDto>> UpdateUser(UpdateUserDto updateRequest)
         {
-            updateRequest.Id = GetCurrentUserId();
-            var result = await _userService.UpdateUserAsync(updateRequest);
+            string userId = GetCurrentUserId();
+            var result = await _userService.UpdateUserAsync(updateRequest, userId);
+            return Ok(result);
+        }
+
+        [HttpPost("upload-image")]
+        public async Task<ActionResult<bool>> UploadImage([FromForm] ImageUploadDto request)
+        {
+            string userId = GetCurrentUserId();
+            UploadType type = UploadType.User;
+            var result = await _userService.UploadImage(request.File, userId, type);
             return Ok(result);
         }
 

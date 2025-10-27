@@ -10,8 +10,7 @@ namespace Template.Identity.Models
 {
     public class ApplicationRole : IdentityRole
     {
-        public string Name { get; set; }
-        public string RoleDescription { get; set; }
+        public string RoleDescription { get; set; } = string.Empty;
         public DateTime DateCreated { get; set; }
 
         [DefaultValue(false)]

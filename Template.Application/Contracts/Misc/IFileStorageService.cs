@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Http;
+using Template.Application.Models.Enums;
 
 namespace Template.Application.Contracts.Misc
 {
     public interface IFileStorageService
     {
+        Task<string> SaveImageAsync(IFormFile imageFile, UploadType uploadType);
+        Task<string> SaveDocumentAsync(IFormFile documentFile);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -6,8 +7,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Template.Application.Contracts.Identity;
+using Template.Application.Contracts.Misc;
 using Template.Application.DTOs.Identity;
 using Template.Application.Exceptions;
+using Template.Application.Models.Enums;
 using Template.Application.Models.Identity;
 using Template.Identity.Models;
 
@@ -16,10 +19,12 @@ namespace Template.Identity.Services
     public class UserService : IUserService
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IFileStorageService _fileStorageService;
 
-        public UserService(UserManager<ApplicationUser> userManager)
+        public UserService(UserManager<ApplicationUser> userManager, IFileStorageService fileStorageService)
         {
             _userManager = userManager;
+            _fileStorageService = fileStorageService;
         }
 
         public async Task<List<UserDto>> GetUsers()
@@ -31,8 +36,9 @@ namespace Template.Identity.Services
                 Email = x.Email,
                 FirstName = x.FirstName,
                 LastName = x.LastName,
+                ImageUrl = x.ImageUrl,
                 IsActive = x.IsActive,
-                EmailConfirmaed = x.EmailConfirmed,
+                EmailConfirmed = x.EmailConfirmed,
                 DateCreated = x.DateCreated
             }).ToList();
         }
@@ -50,8 +56,9 @@ namespace Template.Identity.Services
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
+                ImageUrl = user.ImageUrl,
                 IsActive = user.IsActive,
-                EmailConfirmaed = user.EmailConfirmed,
+                EmailConfirmed = user.EmailConfirmed,
                 DateCreated = user.DateCreated
             };
         }
@@ -69,8 +76,9 @@ namespace Template.Identity.Services
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
+                ImageUrl = user.ImageUrl,
                 IsActive = user.IsActive,
-                EmailConfirmaed = user.EmailConfirmed,
+                EmailConfirmed = user.EmailConfirmed,
                 DateCreated = user.DateCreated
             };
         }
@@ -99,13 +107,13 @@ namespace Template.Identity.Services
             return await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
         }
 
-        public async Task<UserDto> UpdateUserAsync(UpdateUserDto updateRequest)
+        public async Task<UserDto> UpdateUserAsync(UpdateUserDto updateRequest, string userId)
         {
-            var user = await _userManager.FindByIdAsync(updateRequest.Id);
+            var user = await _userManager.FindByIdAsync(userId);
 
             if (user == null)
             {
-                throw new NotFoundException($"User with ID {updateRequest.Id} not found.", updateRequest.Id);
+                throw new NotFoundException($"User with ID {userId} not found.", userId);
             }
 
             updateRequest.Adapt(user);
@@ -118,6 +126,29 @@ namespace Template.Identity.Services
             }
 
             return user.Adapt<UserDto>();
+        }
+
+        public async Task<bool> UploadImage(IFormFile file, string userId, UploadType type)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                throw new NotFoundException($"User with ID {userId} not found.", userId);
+            }
+
+            var imageUrl = await _fileStorageService.SaveImageAsync(file, type);
+
+            user.ImageUrl = imageUrl;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                throw new ApplicationException($"Failed to upload user image: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+
+            return true;
         }
         public async Task<IdentityResult> ActivateUserAsync(string userId)
         {

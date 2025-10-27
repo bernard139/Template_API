@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using System.Text;
 using Template.Application.Contracts.Misc;
-using Template.Misc.Enums;
+using Template.Application.Models.Enums;
 
 namespace Template.Misc
 {

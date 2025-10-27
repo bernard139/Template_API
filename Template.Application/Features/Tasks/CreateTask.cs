@@ -42,6 +42,9 @@ namespace Template.Application.Features.Tasks
                 Domain.Task newTask = command.CreateTaskDto.Adapt<Domain.Task>();
 
                 newTask.CreatedBy = command.UserId;
+                newTask.CreatedDate = DateTime.UtcNow;
+                newTask.IsActive = true;
+                newTask.IsDeleted = false;
 
                 await _unitOfWork.TaskRepository.AddAsync(newTask);
                 await _unitOfWork.Save();

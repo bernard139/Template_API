@@ -191,6 +191,9 @@ namespace Template.Identity.Migrations
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("DateModified")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -200,6 +203,9 @@ namespace Template.Identity.Migrations
 
                     b.Property<string>("FirstName")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
@@ -262,8 +268,9 @@ namespace Template.Identity.Migrations
                         {
                             Id = "7f8df141-8a3e-4f3f-82d3-0a89626a4b1c",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "e5b07c3f-be23-489b-82da-c84ba6d59758",
-                            DateCreated = new DateTime(2025, 10, 24, 8, 44, 43, 546, DateTimeKind.Local).AddTicks(2948),
+                            ConcurrencyStamp = "d4e3d2b6-a03f-4cfb-8cee-506b646432c7",
+                            DateCreated = new DateTime(2025, 10, 27, 17, 5, 42, 207, DateTimeKind.Local).AddTicks(4673),
+                            DateModified = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "System",
@@ -273,9 +280,9 @@ namespace Template.Identity.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEDhnOQvtEVm6nUR6CmG1xd90Pq/YpAqOTuwggY/h43IndMLslPWSjqs+oHLipFc1FA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKzntGAE1xdnhsqtkGUek4a3q1CbAOfGf0YbakE/ycbLMs3bO/uRHcfCxIEpwlpMhA==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "d9313f4e-f718-4e74-a7ec-022f8e8e7690",
+                            SecurityStamp = "38b58507-e7be-49ab-a489-a7dc4abadca6",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         },
@@ -283,8 +290,9 @@ namespace Template.Identity.Migrations
                         {
                             Id = "b25a925a-9fbd-4e49-89f1-8ec446a8f023",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "604f9178-3863-4a42-bb8a-6616d4386e18",
-                            DateCreated = new DateTime(2025, 10, 24, 8, 44, 43, 856, DateTimeKind.Local).AddTicks(4918),
+                            ConcurrencyStamp = "95dbc393-53d0-4cbf-8808-506a72250587",
+                            DateCreated = new DateTime(2025, 10, 27, 17, 5, 42, 331, DateTimeKind.Local).AddTicks(5571),
+                            DateModified = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "user@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "System",
@@ -294,9 +302,9 @@ namespace Template.Identity.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "USER@LOCALHOST.COM",
                             NormalizedUserName = "USER@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEM52Xv/cZDH7vScAreO0badXN3WYsBlr5bSi3QKzKHNqfwV5h/X49gTBFMi/2yfRFg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAENkgG7J2z9z4DZ4ppk4+cxi6C7wdv3w0KE22SgA2V4YPPKd22zzDLXtvJjREOMqATw==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "7606ef80-4804-4adc-b4d8-1fd428d73e08",
+                            SecurityStamp = "e32335f3-e5f5-4985-8e3c-0a8a66ba07dc",
                             TwoFactorEnabled = false,
                             UserName = "user@localhost.com"
                         });
@@ -374,8 +382,9 @@ namespace Template.Identity.Migrations
                         new
                         {
                             Id = "a4f78d09-86e3-4e96-a91b-3713e8043c7c",
+                            Name = "Administrator",
                             NormalizedName = "ADMINISTRATOR",
-                            DateCreated = new DateTime(2025, 10, 24, 8, 44, 43, 286, DateTimeKind.Local).AddTicks(172),
+                            DateCreated = new DateTime(2025, 10, 27, 17, 5, 42, 66, DateTimeKind.Local).AddTicks(4455),
                             IsActive = true,
                             IsDeleted = false,
                             RoleDescription = "Administrative role"
@@ -383,8 +392,9 @@ namespace Template.Identity.Migrations
                         new
                         {
                             Id = "e3f7a8c1-b55c-4e4e-8893-89e440da1bbd",
+                            Name = "User",
                             NormalizedName = "USER",
-                            DateCreated = new DateTime(2025, 10, 24, 8, 44, 43, 286, DateTimeKind.Local).AddTicks(213),
+                            DateCreated = new DateTime(2025, 10, 27, 17, 5, 42, 66, DateTimeKind.Local).AddTicks(4475),
                             IsActive = true,
                             IsDeleted = false,
                             RoleDescription = "User role"

@@ -16,6 +16,7 @@ namespace Template.Application.Features.Tasks
     {
         public class DeleteTaskCommand : IRequest<ServerResponse<bool>>
         {
+            public string UserId { get; set; } = string.Empty;
             public long Id { get; set; }
         }
 
@@ -37,6 +38,10 @@ namespace Template.Application.Features.Tasks
                 };
 
                 task.IsDeleted = true;
+                task.IsActive = false;
+                task.DeletedBy = request.UserId;
+                task.DeletedDate = DateTime.Now;
+
                 await _unitOfWork.TaskRepository.UpdateAsync(task);
 
                 return SetSuccess(response, true, responseDescs.SUCCESS);

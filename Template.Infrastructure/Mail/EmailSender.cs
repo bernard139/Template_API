@@ -1,123 +1,84 @@
-﻿using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
+﻿using MailKit.Net.Smtp;
+using Microsoft.Extensions.Options;
 using SendGrid;
 using SendGrid.Helpers.Mail;
-using System.Globalization;
-using System.Text.RegularExpressions;
-using System.Text;
+using System.Net;
+using System.Net.Mail;
 using Template.Application.Contracts.Infrastructure;
 using Template.Application.Models;
-using Template.Application.Models.Enums;
-using Microsoft.Extensions.Logging;
-using Template.Application.Contracts.Persistence;
-using Template.Domain;
-using Template.Application.Misc;
-using MimeKit;
-using MailKit.Net.Smtp;
+using SmtpClient = System.Net.Mail.SmtpClient;
 
 namespace Template.Infrastructure.Mail
 {
     public class EmailSender : IEmailSender
     {
-        private EmailSettings _emailsettings {  get; }
-        private SmtpSettings _smtpSettings { get; }
-        private readonly ITemplateDbContext _context;
-        private readonly ILogger<EmailSender> _logger;
-        public EmailSender(IOptions<EmailSettings> emailSettings, IOptions<SmtpSettings> smtpSettings, ILogger<EmailSender> logger)
+        private readonly EmailSettings _emailsettings;
+
+        public EmailSender(IOptions<EmailSettings> emailSettings)
         {
             _emailsettings = emailSettings.Value;
-            _smtpSettings = smtpSettings.Value;
-            _logger = logger;
         }
+
         public async Task<bool> SendEmail(Email email)
         {
-            SendGridClient client = new(_emailsettings.ApiKey);
-            EmailAddress to = new(email.To);
-            EmailAddress from = new()
-            {
-                Email = _emailsettings.FromAddress,
-                Name = _emailsettings.FromName
-            };
+            // Try SendGrid first
+            //var sendGridSuccess = await SendWithSendGrid(email);
+            //if (sendGridSuccess) return true;
 
-            SendGridMessage message = MailHelper.CreateSingleEmail(from, to, email.Subject,
-                                                                   email.Body, "EmailContent");
-            Response response = await client.SendEmailAsync(message);
-
-            return response.StatusCode == System.Net.HttpStatusCode.OK ||
-                   response.StatusCode == System.Net.HttpStatusCode.Accepted;
+            // If SendGrid fails, fall back to SMTP
+            return await SendWithSmtp(email);
         }
 
-        public async Task<string> SendEmail(EmailBody emailBody)
+        private async Task<bool> SendWithSendGrid(Email email)
         {
-            MimeMessage email = new MimeMessage();
-
-            email.Sender = MailboxAddress.Parse(_smtpSettings.Email);
-            email.To.Add(MailboxAddress.Parse(emailBody.Receiver));
-            email.Subject = emailBody.Subject;
-
-            BodyBuilder builder = new BodyBuilder
-            { HtmlBody = emailBody.MessageBody };
-
-            if (emailBody.attachmentContent != null)
-            {
-                builder.Attachments.Add("Receipt.pdf", emailBody.attachmentContent, ContentType.Parse("application/pdf"));
-            }
-
-            email.Body = builder.ToMessageBody();
-
-            using SmtpClient smtpClient = new SmtpClient();
-
-            smtpClient.ServerCertificateValidationCallback = (s, c, h, e) => true;
-
-            smtpClient.Connect(_smtpSettings.Host, _smtpSettings.Port, MailKit.Security.SecureSocketOptions.StartTls);
-
-            smtpClient.Authenticate(_smtpSettings.UserName, _smtpSettings.Password);
-
-            var result = await smtpClient.SendAsync(email);
-            smtpClient.Disconnect(true);
-
-            return result;
-        }
-
-        public static bool IsValidEmail(string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                return false;
-
             try
             {
-                // Normalize the domain
-                email = Regex.Replace(email, @"(@)(.+)$", DomainMapper,
-                                      RegexOptions.None, TimeSpan.FromMilliseconds(200));
+                var client = new SendGridClient(_emailsettings.ApiKey);
+                var to = new EmailAddress(email.To);
+                var from = new EmailAddress(_emailsettings.FromAddress, _emailsettings.FromName);
 
-                // Examines the domain part of the email and normalizes it.
-                string DomainMapper(Match match)
+                var message = MailHelper.CreateSingleEmail(from, to, email.Subject,
+                                                          email.Body, email.Body);
+
+                var response = await client.SendEmailAsync(message);
+                return response.StatusCode == HttpStatusCode.OK ||
+                       response.StatusCode == HttpStatusCode.Accepted;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task<bool> SendWithSmtp(Email email)
+        {
+            try
+            {
+                using (var smtpClient = new SmtpClient(_emailsettings.SmtpHost))
                 {
-                    // Use IdnMapping class to convert Unicode domain names.
-                    var idn = new IdnMapping();
+                    smtpClient.Port = _emailsettings.SmtpPort;
+                    smtpClient.Credentials = new NetworkCredential(
+                        _emailsettings.SmtpUsername,
+                        _emailsettings.SmtpPassword
+                    );
+                    smtpClient.EnableSsl = true;
+                    smtpClient.UseDefaultCredentials = false;
+                    smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
 
-                    // Pull out and process domain name (throws ArgumentException on invalid)
-                    string domainName = idn.GetAscii(match.Groups[2].Value);
+                    using (var mailMessage = new MailMessage())
+                    {
+                        mailMessage.From = new MailAddress(_emailsettings.FromAddress, _emailsettings.FromName);
+                        mailMessage.To.Add(email.To);
+                        mailMessage.Subject = email.Subject;
+                        mailMessage.Body = email.Body;
+                        mailMessage.IsBodyHtml = true;
 
-                    return match.Groups[1].Value + domainName;
+                        await smtpClient.SendMailAsync(mailMessage);
+                        return true;
+                    }
                 }
             }
-            catch (RegexMatchTimeoutException e)
-            {
-                return false;
-            }
-            catch (ArgumentException e)
-            {
-                return false;
-            }
-
-            try
-            {
-                return Regex.IsMatch(email,
-                    @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-                    RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
-            }
-            catch (RegexMatchTimeoutException)
+            catch (Exception ex)
             {
                 return false;
             }

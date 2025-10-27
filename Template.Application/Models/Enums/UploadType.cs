@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Template.Misc.Enums
+namespace Template.Application.Models.Enums
 {
     public enum UploadType
     {

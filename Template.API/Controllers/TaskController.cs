@@ -58,7 +58,11 @@ namespace Template.API.Controllers
         [HttpPut]
         public async Task<ActionResult<ServerResponse<bool>>> Update([FromBody] UpdateTaskDto updateTaskDto)
         {
-            UpdateTaskCommand command = new UpdateTaskCommand { UpdateTaskDto = updateTaskDto };
+            UpdateTaskCommand command = new UpdateTaskCommand 
+            {
+                UserId = GetCurrentUserId(),
+                UpdateTaskDto = updateTaskDto 
+            };
             var response = await _mediator.Send(command);
 
             return Ok(response);
@@ -67,7 +71,11 @@ namespace Template.API.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<ServerResponse<bool>>> Delete(long id)
         {
-            DeleteTaskCommand command = new DeleteTaskCommand { Id = id };
+            DeleteTaskCommand command = new DeleteTaskCommand 
+            {
+                UserId = GetCurrentUserId(),
+                Id = id 
+            };
             var response = await _mediator.Send(command);
 
             return Ok(response);

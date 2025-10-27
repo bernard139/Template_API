@@ -12,7 +12,7 @@ using Template.Persistence;
 namespace Template.Persistence.Migrations
 {
     [DbContext(typeof(TemplateDbContext))]
-    [Migration("20251024074547_Init")]
+    [Migration("20251027160659_Init")]
     partial class Init
     {
         /// <inheritdoc />
