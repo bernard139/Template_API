@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>dotnet-new-webapi</ToolCommandName>
+		<PackageOutputPath>./nupkg</PackageOutputPath>
+
+		<PackageId>Template.CLI</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Your Name</Authors>
+		<Description>CLI tool to scaffold .NET Web API applications with user management and business features</Description>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.1.0" />
+	</ItemGroup>
+
+</Project>

@@ -30,7 +30,7 @@ namespace Template.Infrastructure.Mail
             var baseUrl = GetBaseUrl();
             var verificationUrl = $"{baseUrl.TrimEnd('/')}/api/account/verify-email?email={user.Email}&token={encodedToken}";
 
-            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "EmailTemplates", "EmailVerification.html");
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "EmailFormats", "EmailVerification.html");
             var templateContent = await File.ReadAllTextAsync(templatePath);
 
             var emailBody = templateContent
@@ -61,7 +61,7 @@ namespace Template.Infrastructure.Mail
             var baseUrl = GetBaseUrl();
             var resetUrl = $"{baseUrl.TrimEnd('/')}/api/account/reset-password?email={user.Email}&token={encodedToken}";
 
-            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "EmailTemplates", "PasswordResetEmail.html");
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "EmailFormats", "PasswordResetEmail.html");
             var templateContent = await File.ReadAllTextAsync(templatePath);
 
             var emailBody = templateContent
