@@ -461,14 +461,6 @@ bld/
         Console.WriteLine($"2. 🔧 Restore packages: dotnet restore");
         Console.WriteLine($"3. 🏗️  Build solution: dotnet build");
         Console.WriteLine($"4. 🚀 Run the API: dotnet run --project {appName}.API");
-        Console.WriteLine($"\n💡 If you encounter build errors, try:");
-        Console.WriteLine($"   - Delete bin and obj folders: dotnet clean");
-        Console.WriteLine($"   - Restore packages: dotnet restore");
-        Console.WriteLine($"   - Rebuild: dotnet build --no-restore");
-        Console.WriteLine($"\n⚠️  If you still see namespace errors:");
-        Console.WriteLine($"   - Check that all folders were copied correctly");
-        Console.WriteLine($"   - Verify the Domain project has Common folder with BaseObject.cs");
-        Console.WriteLine($"   - Try building individual projects first");
     }
 
     private void LogVerbose(string message)
