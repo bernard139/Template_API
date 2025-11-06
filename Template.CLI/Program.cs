@@ -258,36 +258,96 @@ class Program
 
             LogVerbose($"Found {allItems.Count} items to process");
 
-            // Create directories first
-            foreach (var item in allItems.Where(Directory.Exists))
+            // Create directories first - improved to handle all directories
+            var directories = allItems.Where(Directory.Exists).ToList();
+            foreach (var dir in directories)
             {
-                var relativePath = GetRelativePath(sourceDir, item);
-                var newRelativePath = relativePath.Replace(TemplateName, appName);
-                var newDir = Path.Combine(targetDir, newRelativePath);
-                Directory.CreateDirectory(newDir);
-            }
-
-            // Then process files
-            foreach (var item in allItems.Where(File.Exists))
-            {
-                var relativePath = GetRelativePath(sourceDir, item);
-                var newRelativePath = relativePath.Replace(TemplateName, appName);
-                var targetFile = Path.Combine(targetDir, newRelativePath);
-
                 try
                 {
-                    var content = File.ReadAllText(item);
-                    var newContent = content.Replace(TemplateName, appName);
-                    newContent = newContent.Replace($"namespace {TemplateName}", $"namespace {appName}");
-                    newContent = newContent.Replace($"using {TemplateName}", $"using {appName}");
-                    File.WriteAllText(targetFile, newContent);
+                    var relativePath = GetRelativePath(sourceDir, dir);
+                    var newRelativePath = relativePath.Replace(TemplateName, appName);
+                    var newDir = Path.Combine(targetDir, newRelativePath);
+
+                    if (!Directory.Exists(newDir))
+                    {
+                        Directory.CreateDirectory(newDir);
+                        LogVerbose($"Created directory: {newDir}");
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // If text processing fails, copy as binary
-                    File.Copy(item, targetFile, true);
+                    LogVerbose($"Error creating directory {dir}: {ex.Message}");
                 }
             }
+
+            // Then process files - improved error handling and namespace replacement
+            var files = allItems.Where(File.Exists).ToList();
+            foreach (var file in files)
+            {
+                try
+                {
+                    var relativePath = GetRelativePath(sourceDir, file);
+                    var newRelativePath = relativePath.Replace(TemplateName, appName);
+                    var targetFile = Path.Combine(targetDir, newRelativePath);
+
+                    // Ensure target directory exists
+                    var targetFileDir = Path.GetDirectoryName(targetFile);
+                    if (!Directory.Exists(targetFileDir))
+                    {
+                        Directory.CreateDirectory(targetFileDir);
+                        LogVerbose($"Created missing directory: {targetFileDir}");
+                    }
+
+                    var extension = Path.GetExtension(file).ToLower();
+                    var textFileExtensions = new[] { ".cs", ".csproj", ".sln", ".config", ".json", ".xml", ".txt", ".md", ".props", ".targets", ".resx" };
+
+                    if (textFileExtensions.Contains(extension))
+                    {
+                        try
+                        {
+                            var content = File.ReadAllText(file);
+                            var newContent = content.Replace(TemplateName, appName);
+                            // More comprehensive replacements
+                            newContent = newContent.Replace($"namespace {TemplateName}.", $"namespace {appName}.");
+                            newContent = newContent.Replace($"namespace {TemplateName}", $"namespace {appName}");
+                            newContent = newContent.Replace($"using {TemplateName}.", $"using {appName}.");
+                            newContent = newContent.Replace($"using {TemplateName}", $"using {appName}");
+                            newContent = newContent.Replace($"{TemplateName}.API", $"{appName}.API");
+                            newContent = newContent.Replace($"{TemplateName}.Application", $"{appName}.Application");
+                            newContent = newContent.Replace($"{TemplateName}.Domain", $"{appName}.Domain");
+                            newContent = newContent.Replace($"{TemplateName}.Infrastructure", $"{appName}.Infrastructure");
+                            newContent = newContent.Replace($"{TemplateName}.Persistence", $"{appName}.Persistence");
+                            newContent = newContent.Replace($"{TemplateName}.Identity", $"{appName}.Identity");
+                            newContent = newContent.Replace($"{TemplateName}.Common", $"{appName}.Common");
+                            newContent = newContent.Replace($"{TemplateName}.Misc", $"{appName}.Misc");
+
+                            File.WriteAllText(targetFile, newContent);
+                            LogVerbose($"Processed: {targetFile}");
+                        }
+                        catch (Exception ex)
+                        {
+                            LogVerbose($"Error processing text file {file}: {ex.Message}");
+                            // If text processing fails, copy as binary
+                            File.Copy(file, targetFile, true);
+                            LogVerbose($"Copied as binary: {targetFile}");
+                        }
+                    }
+                    else
+                    {
+                        // Copy binary files as-is
+                        File.Copy(file, targetFile, true);
+                        LogVerbose($"Copied binary: {targetFile}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogVerbose($"Error processing file {file}: {ex.Message}");
+                    // Continue with next file
+                }
+            }
+
+            // Clean up obj and bin directories to avoid build conflicts
+            CleanBuildArtifacts(targetDir);
 
             // Create .gitignore
             CreateGitIgnore(targetDir);
@@ -298,6 +358,33 @@ class Program
         {
             Console.WriteLine($"❌ Error copying template: {ex.Message}");
             throw;
+        }
+    }
+
+    private void CleanBuildArtifacts(string targetDir)
+    {
+        try
+        {
+            // Remove all bin and obj directories to avoid build conflicts
+            var binDirs = Directory.GetDirectories(targetDir, "bin", SearchOption.AllDirectories);
+            var objDirs = Directory.GetDirectories(targetDir, "obj", SearchOption.AllDirectories);
+
+            foreach (var dir in binDirs.Concat(objDirs))
+            {
+                try
+                {
+                    Directory.Delete(dir, true);
+                    LogVerbose($"Cleaned build artifacts: {dir}");
+                }
+                catch (Exception ex)
+                {
+                    LogVerbose($"Warning: Could not clean {dir}: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogVerbose($"Warning: Error cleaning build artifacts: {ex.Message}");
         }
     }
 
@@ -364,6 +451,10 @@ bld/
         Console.WriteLine($"2. 🔧 Restore packages: dotnet restore");
         Console.WriteLine($"3. 🏗️  Build solution: dotnet build");
         Console.WriteLine($"4. 🚀 Run the API: dotnet run --project {appName}.API");
+        Console.WriteLine($"\n💡 If you encounter build errors, try:");
+        Console.WriteLine($"   - Delete bin and obj folders: dotnet clean");
+        Console.WriteLine($"   - Restore packages: dotnet restore");
+        Console.WriteLine($"   - Rebuild: dotnet build --no-restore");
     }
 
     private void LogVerbose(string message)
