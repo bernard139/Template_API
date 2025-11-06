@@ -248,109 +248,8 @@ class Program
 
         try
         {
-            // Get all files and directories, excluding unwanted items
-            var allItems = Directory.GetFileSystemEntries(sourceDir, "*", SearchOption.AllDirectories)
-                .Where(item => !excludePatterns.Any(pattern =>
-                    item.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0) &&
-                    !excludeFiles.Any(file =>
-                    Path.GetFileName(item).Equals(file, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
-
-            LogVerbose($"Found {allItems.Count} items to process");
-
-            // Create directories first - improved to handle all directories
-            var directories = allItems.Where(Directory.Exists).ToList();
-            foreach (var dir in directories)
-            {
-                try
-                {
-                    var relativePath = GetRelativePath(sourceDir, dir);
-                    var newRelativePath = relativePath.Replace(TemplateName, appName);
-                    var newDir = Path.Combine(targetDir, newRelativePath);
-
-                    if (!Directory.Exists(newDir))
-                    {
-                        Directory.CreateDirectory(newDir);
-                        LogVerbose($"Created directory: {newDir}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogVerbose($"Error creating directory {dir}: {ex.Message}");
-                }
-            }
-
-            // Then process files - improved error handling and namespace replacement
-            var files = allItems.Where(File.Exists).ToList();
-            foreach (var file in files)
-            {
-                try
-                {
-                    var relativePath = GetRelativePath(sourceDir, file);
-                    var newRelativePath = relativePath.Replace(TemplateName, appName);
-                    var targetFile = Path.Combine(targetDir, newRelativePath);
-
-                    // Ensure target directory exists
-                    var targetFileDir = Path.GetDirectoryName(targetFile);
-                    if (!Directory.Exists(targetFileDir))
-                    {
-                        Directory.CreateDirectory(targetFileDir);
-                        LogVerbose($"Created missing directory: {targetFileDir}");
-                    }
-
-                    var extension = Path.GetExtension(file).ToLower();
-                    var textFileExtensions = new[] { ".cs", ".csproj", ".sln", ".config", ".json", ".xml", ".txt", ".md", ".props", ".targets", ".resx" };
-
-                    if (textFileExtensions.Contains(extension))
-                    {
-                        try
-                        {
-                            var content = File.ReadAllText(file);
-                            var newContent = content.Replace(TemplateName, appName);
-                            // More comprehensive replacements
-                            newContent = newContent.Replace($"namespace {TemplateName}.", $"namespace {appName}.");
-                            newContent = newContent.Replace($"namespace {TemplateName}", $"namespace {appName}");
-                            newContent = newContent.Replace($"using {TemplateName}.", $"using {appName}.");
-                            newContent = newContent.Replace($"using {TemplateName}", $"using {appName}");
-                            newContent = newContent.Replace($"{TemplateName}.API", $"{appName}.API");
-                            newContent = newContent.Replace($"{TemplateName}.Application", $"{appName}.Application");
-                            newContent = newContent.Replace($"{TemplateName}.Domain", $"{appName}.Domain");
-                            newContent = newContent.Replace($"{TemplateName}.Infrastructure", $"{appName}.Infrastructure");
-                            newContent = newContent.Replace($"{TemplateName}.Persistence", $"{appName}.Persistence");
-                            newContent = newContent.Replace($"{TemplateName}.Identity", $"{appName}.Identity");
-                            newContent = newContent.Replace($"{TemplateName}.Common", $"{appName}.Common");
-                            newContent = newContent.Replace($"{TemplateName}.Misc", $"{appName}.Misc");
-
-                            File.WriteAllText(targetFile, newContent);
-                            LogVerbose($"Processed: {targetFile}");
-                        }
-                        catch (Exception ex)
-                        {
-                            LogVerbose($"Error processing text file {file}: {ex.Message}");
-                            // If text processing fails, copy as binary
-                            File.Copy(file, targetFile, true);
-                            LogVerbose($"Copied as binary: {targetFile}");
-                        }
-                    }
-                    else
-                    {
-                        // Copy binary files as-is
-                        File.Copy(file, targetFile, true);
-                        LogVerbose($"Copied binary: {targetFile}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogVerbose($"Error processing file {file}: {ex.Message}");
-                    // Continue with next file
-                }
-            }
-
-            // Clean up obj and bin directories to avoid build conflicts
-            CleanBuildArtifacts(targetDir);
-
-            // Create .gitignore
-            CreateGitIgnore(targetDir);
+            // Use a recursive approach to ensure all directories are copied
+            CopyDirectoryRecursive(sourceDir, targetDir, appName, excludePatterns, excludeFiles);
 
             LogVerbose("Template copying completed");
         }
@@ -359,6 +258,117 @@ class Program
             Console.WriteLine($"❌ Error copying template: {ex.Message}");
             throw;
         }
+    }
+
+    private void CopyDirectoryRecursive(string sourceDir, string targetDir, string appName, string[] excludePatterns, string[] excludeFiles)
+    {
+        // Create target directory if it doesn't exist
+        Directory.CreateDirectory(targetDir);
+
+        // Get all files and directories in the current source directory
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var fileName = Path.GetFileName(file);
+
+            // Skip excluded files
+            if (excludeFiles.Any(exclude => fileName.Equals(exclude, StringComparison.OrdinalIgnoreCase)))
+            {
+                LogVerbose($"Skipping excluded file: {file}");
+                continue;
+            }
+
+            var relativePath = GetRelativePath(sourceDir, file);
+            var newRelativePath = TransformPath(relativePath, appName);
+            var targetFile = Path.Combine(targetDir, newRelativePath);
+
+            // Ensure target directory exists
+            var targetFileDir = Path.GetDirectoryName(targetFile);
+            if (!Directory.Exists(targetFileDir))
+            {
+                Directory.CreateDirectory(targetFileDir);
+            }
+
+            ProcessFile(file, targetFile, appName);
+        }
+
+        // Process subdirectories
+        foreach (var directory in Directory.GetDirectories(sourceDir))
+        {
+            var dirName = Path.GetFileName(directory);
+
+            // Skip excluded directories
+            if (excludePatterns.Any(pattern =>
+                dirName.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                LogVerbose($"Skipping excluded directory: {directory}");
+                continue;
+            }
+
+            var relativePath = GetRelativePath(sourceDir, directory);
+            var newRelativePath = TransformPath(relativePath, appName);
+            var newTargetDir = Path.Combine(targetDir, newRelativePath);
+
+            CopyDirectoryRecursive(directory, newTargetDir, appName, excludePatterns, excludeFiles);
+        }
+    }
+
+    private string TransformPath(string path, string appName)
+    {
+        // Replace Template with appName in the path
+        return path.Replace(TemplateName, appName);
+    }
+
+    private void ProcessFile(string sourceFile, string targetFile, string appName)
+    {
+        var extension = Path.GetExtension(sourceFile).ToLower();
+        var textFileExtensions = new[] { ".cs", ".csproj", ".sln", ".config", ".json", ".xml", ".txt", ".md", ".props", ".targets", ".resx", ".config", ".editorconfig" };
+
+        if (textFileExtensions.Contains(extension))
+        {
+            try
+            {
+                var content = File.ReadAllText(sourceFile);
+                var newContent = TransformContent(content, appName);
+                File.WriteAllText(targetFile, newContent);
+                LogVerbose($"Processed: {targetFile}");
+            }
+            catch (Exception ex)
+            {
+                LogVerbose($"Error processing text file {sourceFile}: {ex.Message}");
+                // If text processing fails, copy as binary
+                File.Copy(sourceFile, targetFile, true);
+                LogVerbose($"Copied as binary: {targetFile}");
+            }
+        }
+        else
+        {
+            // Copy binary files as-is
+            File.Copy(sourceFile, targetFile, true);
+            LogVerbose($"Copied binary: {targetFile}");
+        }
+    }
+
+    private string TransformContent(string content, string appName)
+    {
+        // Comprehensive replacements for all possible occurrences
+        var transformed = content
+            .Replace(TemplateName, appName)
+            .Replace($"namespace {TemplateName}.", $"namespace {appName}.")
+            .Replace($"namespace {TemplateName}", $"namespace {appName}")
+            .Replace($"using {TemplateName}.", $"using {appName}.")
+            .Replace($"using {TemplateName}", $"using {appName}")
+            .Replace($"{TemplateName}.API", $"{appName}.API")
+            .Replace($"{TemplateName}.Application", $"{appName}.Application")
+            .Replace($"{TemplateName}.Domain", $"{appName}.Domain")
+            .Replace($"{TemplateName}.Infrastructure", $"{appName}.Infrastructure")
+            .Replace($"{TemplateName}.Persistence", $"{appName}.Persistence")
+            .Replace($"{TemplateName}.Identity", $"{appName}.Identity")
+            .Replace($"{TemplateName}.Common", $"{appName}.Common")
+            .Replace($"{TemplateName}.Misc", $"{appName}.Misc")
+            .Replace($"<RootNamespace>{TemplateName}", $"<RootNamespace>{appName}")
+            .Replace($"<AssemblyName>{TemplateName}", $"<AssemblyName>{appName}");
+
+        return transformed;
     }
 
     private void CleanBuildArtifacts(string targetDir)
@@ -455,6 +465,10 @@ bld/
         Console.WriteLine($"   - Delete bin and obj folders: dotnet clean");
         Console.WriteLine($"   - Restore packages: dotnet restore");
         Console.WriteLine($"   - Rebuild: dotnet build --no-restore");
+        Console.WriteLine($"\n⚠️  If you still see namespace errors:");
+        Console.WriteLine($"   - Check that all folders were copied correctly");
+        Console.WriteLine($"   - Verify the Domain project has Common folder with BaseObject.cs");
+        Console.WriteLine($"   - Try building individual projects first");
     }
 
     private void LogVerbose(string message)
