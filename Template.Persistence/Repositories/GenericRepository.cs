@@ -19,6 +19,14 @@ namespace Template.Persistence.Repositories
             return entity;
         }
 
+        public async Task AddRangeAsync(IEnumerable<T> entities)
+        {
+            if (entities == null)
+                return;
+
+            await _dbContext.AddRangeAsync(entities);
+        }
+
         public async Task DeleteAsync(T entity)
         {
             _dbContext.Set<T>().Remove(entity);

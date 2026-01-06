@@ -78,14 +78,16 @@ void AddSwaggerDoc(IServiceCollection services)
     {
         c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
-            Description = "",
             Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
             In = ParameterLocation.Header,
-            Type = SecuritySchemeType.ApiKey,
-            Scheme = "Bearer"
+            Description = "Enter your JWT token (without 'Bearer ' prefix)"
         });
 
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
         {
             {
                 new OpenApiSecurityScheme
@@ -94,12 +96,9 @@ void AddSwaggerDoc(IServiceCollection services)
                     {
                         Type = ReferenceType.SecurityScheme,
                         Id = "Bearer"
-                    },
-                    Scheme = "oauth2",
-                    Name = "Bearer",
-                    In = ParameterLocation.Header,
+                    }
                 },
-                new List<string>()
+                Array.Empty<string>()
             }
         });
 

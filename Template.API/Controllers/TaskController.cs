@@ -25,9 +25,9 @@ namespace Template.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<TaskModel>>> Get()
+        public async Task<ActionResult<List<TaskModel>>> Get([FromQuery] TaskDto request)
         {
-            GetTaskListQuery query = new GetTaskListQuery { UserId = GetCurrentUserId() };
+            GetTaskListQuery query = new GetTaskListQuery { UserId = GetCurrentUserId(), TaskDto = request };
             var response = await _mediator.Send(query);
 
             return Ok(response);

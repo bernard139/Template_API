@@ -1,15 +1,13 @@
-﻿using Mapster;
-using MediatR;
-using Microsoft.AspNetCore.Http;
+﻿using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using Template.Application.Contracts.Identity;
 using Template.Application.Contracts.Persistence;
 using Template.Application.DTOs.Tasks;
 using Template.Application.Responses;
+using Mapster;
 
 namespace Template.Application.Features.Tasks
 {
@@ -18,6 +16,7 @@ namespace Template.Application.Features.Tasks
         public class GetTaskListQuery : IRequest<ServerResponse<List<TaskModel>>>
         {
             public string UserId { get; set; } = string.Empty;
+            public TaskDto TaskDto { get; set; } = new TaskDto();
         }
 
         public class GetTaskListQueryHandler : ResponseBaseService, IRequestHandler<GetTaskListQuery, ServerResponse<List<TaskModel>>>
@@ -29,22 +28,39 @@ namespace Template.Application.Features.Tasks
                 _taskRepository = taskRepository;
             }
 
-            public async Task<ServerResponse<List<TaskModel>>> Handle(GetTaskListQuery request, CancellationToken cancellationToken)
+            public async Task<ServerResponse<List<TaskModel>>> Handle(
+                GetTaskListQuery request,
+                CancellationToken cancellationToken)
             {
-                var response = new ServerResponse<List<TaskModel>>();
+                var pageNumber = Math.Max(request.TaskDto.PageNumber, 1);
+                var pageSize = Math.Min(Math.Max(request.TaskDto.PageSize, 1), 100);
 
-                IReadOnlyList<Domain.Task> tasks = await _taskRepository
-                    .GetAllAsync()
-                    .ConfigureAwait(false);
+                var allTasks = (await _taskRepository.GetAllAsync().ConfigureAwait(false))
+                    .Where(t => t.IsDeleted == false)
+                    .ToList();
 
-                List<TaskModel> taskModels = tasks
-                    .Where(x => x.CreatedBy == request.UserId)
+                var filteredTasks = allTasks
+                    .Where(t => t.CreatedBy == request.UserId)
+                    .AsEnumerable();
+
+                if (!string.IsNullOrWhiteSpace(request.TaskDto.Name))
+                {
+                    var nameFilter = request.TaskDto.Name.Trim().ToLower();
+                    filteredTasks = filteredTasks.Where(t =>
+                        t.Name != null && t.Name.ToLower().Contains(nameFilter));
+                }
+
+                var totalCount = filteredTasks.Count();
+
+                var taskModels = filteredTasks
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .Select(x => x.Adapt<TaskModel>())
                     .ToList();
 
+                var response = new ServerResponse<List<TaskModel>>();
                 return SetSuccess(response, taskModels, responseDescs.SUCCESS);
             }
-
         }
     }
 }

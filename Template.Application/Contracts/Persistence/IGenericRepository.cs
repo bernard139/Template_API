@@ -7,6 +7,7 @@ namespace Template.Application.Contracts.Persistence
         Task<T> GetAsync(long id);
         Task<IReadOnlyList<T>> GetAllAsync();
         Task<T> AddAsync(T entity);
+        Task AddRangeAsync(IEnumerable<T> entities);
         Task UpdateAsync(T entity);
         Task DeleteAsync(T entity);
         Task<bool> Exists(int id);
